@@ -28,7 +28,7 @@ export function BrandingPreview({ header, footer, favicon, share, siteHost, desc
         <p className="pt-2 text-small font-medium">Website header</p>
         <div className="overflow-hidden rounded-lg border border-border bg-white">
           <div className="flex items-center justify-between gap-4 px-4 py-3">
-            {header ? <img src={header.src} alt={PLATFORM_NAME} className="h-8 w-auto max-w-[180px] object-contain" /> : <Wordmark />}
+            {header ? <img src={header.src} alt={PLATFORM_NAME} className="h-12 w-auto max-w-[280px] object-contain object-left" /> : <Wordmark />}
             <div className="hidden items-center gap-4 text-caption text-[#0b1b3f]/80 sm:flex">
               <span>Features</span>
               <span>Themes</span>
@@ -39,7 +39,7 @@ export function BrandingPreview({ header, footer, favicon, share, siteHost, desc
         </div>
         <p className="pt-2 text-small font-medium">Website footer</p>
         <div className="rounded-lg bg-[#0b1b3f] px-4 py-5">
-          {footerLogo ? <img src={footerLogo.src} alt={PLATFORM_NAME} className="h-8 w-auto max-w-[180px] object-contain" /> : <Wordmark light />}
+          {footerLogo ? <img src={footerLogo.src} alt={PLATFORM_NAME} className="h-10 w-auto max-w-[220px] object-contain object-left" /> : <Wordmark light />}
           <p className="mt-2 text-caption text-white/70">{PLATFORM_TAGLINE}.</p>
         </div>
       </div>

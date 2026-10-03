@@ -60,7 +60,12 @@ export const getPublicPlatformConfig = cache(async (): Promise<PublicPlatformCon
 export type BrandImageView = { src: string; width: number | null; height: number | null };
 
 export function brandImageView(image: BrandImage | null): BrandImageView | null {
-  return image ? { src: brandImageUrl(publicEnv().NEXT_PUBLIC_SUPABASE_URL, image), width: image.width, height: image.height } : null;
+  if (!image) return null;
+  try {
+    return { src: brandImageUrl(publicEnv().NEXT_PUBLIC_SUPABASE_URL, image), width: image.width, height: image.height };
+  } catch {
+    return null; // env not available (e.g. a build without env): fall back to the wordmark
+  }
 }
 
 /** After any public.* change: refresh the cached config and every page that renders it. */
@@ -122,10 +127,25 @@ export async function uploadBrandImage(ctx: PlatformContext, slot: BrandSlot, fi
     const sizeError = checkBrandImageSize(slot, width, height);
     if (sizeError) throw fail(sizeError);
   }
+  // Logos often ship with wide transparent/white margins, which make them look tiny in a 48px
+  // header. Trim borders of the corner colour so the visible mark fills the height.
+  let body: Uint8Array = bytes;
+  if (slot === "header_logo" || slot === "footer_logo") {
+    try {
+      const { data, info } = await sharp(bytes).trim({ threshold: 12 }).toFormat(ext === "jpg" ? "jpeg" : (ext as "png" | "webp")).toBuffer({ resolveWithObject: true });
+      if (info.width >= 16 && info.height >= 16) {
+        body = new Uint8Array(data);
+        width = info.width;
+        height = info.height;
+      }
+    } catch {
+      // Nothing to trim (or a single-colour image): keep the original.
+    }
+  }
 
   const supabase = await createSupabaseServerClient();
   const path = `branding/${slot}/${randomUUID()}.${ext}`;
-  const { error: upErr } = await supabase.storage.from(BRANDING_BUCKET).upload(path, bytes, { contentType: mime, cacheControl: "31536000", upsert: false });
+  const { error: upErr } = await supabase.storage.from(BRANDING_BUCKET).upload(path, body, { contentType: mime, cacheControl: "31536000", upsert: false });
   if (upErr) throw storageError(upErr.message);
 
   const key = brandSlotKey(slot);

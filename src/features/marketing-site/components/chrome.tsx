@@ -12,8 +12,8 @@ export function MarketingHeader() {
       <a href={`#${SECTION_IDS.main}`} className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:shadow-brand-card">
         Skip to content
       </a>
-      <Container className="flex h-16 items-center justify-between gap-6">
-        <BrandLogo />
+      <Container className="flex h-[72px] items-center justify-between gap-4 sm:h-20 sm:gap-6">
+        <BrandLogo size="header" className="shrink-0" />
         <nav aria-label="Main" className="hidden lg:block">
           <ul className="flex items-center gap-1 text-[0.95rem]">
             {NAV_LINKS.map((l) => (
@@ -29,7 +29,7 @@ export function MarketingHeader() {
           <Link href={LOGIN_HREF} className="hidden rounded-full px-4 py-2 text-[0.95rem] font-semibold text-brand-ink hover:bg-brand-canvas sm:inline-flex" {...analyticsAttributes("nav_click", "login", "header")}>
             Login
           </Link>
-          <ButtonLink href={SIGNUP_HREF} size="sm" className="hidden h-10 sm:inline-flex" track={{ id: "create_store", location: "header" }}>
+          <ButtonLink href={SIGNUP_HREF} size="sm" className="hidden h-10 whitespace-nowrap sm:inline-flex" track={{ id: "create_store", location: "header" }}>
             {CTA_CREATE}
           </ButtonLink>
           <MobileNav links={NAV_LINKS} loginHref={LOGIN_HREF} signupHref={SIGNUP_HREF} ctaLabel={CTA_CREATE} />
