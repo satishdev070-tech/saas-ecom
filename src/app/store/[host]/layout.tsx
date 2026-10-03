@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { resolveStorefrontTenant } from "@/lib/tenant/resolve";
+import { resolveStorefrontTenant, verifiedStorefrontHost } from "@/lib/tenant/resolve";
 import { storefrontAvailability } from "@/lib/tenant/context";
 import { assetUrl } from "@/lib/storage/assets";
 import { canonicalUrl } from "@/features/storefront/urls";
@@ -14,6 +14,8 @@ import { getTrackingConfig } from "@/features/tracking/server/config";
 import { TrackingTags } from "@/features/tracking/components/tracking-tags";
 import { StoreUnavailable } from "./store-unavailable";
 import { ComingSoon } from "./coming-soon";
+import { DomainPending } from "./domain-pending";
+import { pendingDomainState } from "@/lib/tenant/directory";
 import { isHiddenDraft } from "@/features/stores/launch";
 import { PreviewEscapeBridge } from "@/features/storefront/components/preview-escape";
 import { RouteProgress } from "@/features/storefront/components/route-progress";
@@ -51,7 +53,12 @@ export async function generateMetadata({ params }: LayoutProps<"/store/[host]">)
 export default async function StorefrontLayout({ children, params }: LayoutProps<"/store/[host]">) {
   const { host } = await params;
   const tenant = await resolveStorefrontTenant(host);
-  if (!tenant) notFound();
+  if (!tenant) {
+    const routeHost = await verifiedStorefrontHost(host);
+    const pending = routeHost ? await pendingDomainState(routeHost) : null;
+    if (pending && routeHost) return <DomainPending host={routeHost} state={pending} />;
+    notFound();
+  }
   switch (storefrontAvailability(tenant.status)) {
     case "unavailable":
       notFound();

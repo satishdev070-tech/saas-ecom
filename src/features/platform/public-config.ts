@@ -9,19 +9,23 @@ export const PUBLIC_CONFIG_KEYS = {
   headerLogo: "public.brand.header_logo",
   footerLogo: "public.brand.footer_logo",
   favicon: "public.brand.favicon",
+  ogImage: "public.brand.og_image",
   ga4: "public.analytics.ga4_id",
   googleSellers: "public.auth.google_sellers",
   googleShoppers: "public.auth.google_shoppers",
   locationAutofill: "public.checkout.location_autofill",
 } as const;
 
-export const BRAND_SLOTS = ["header_logo", "footer_logo", "favicon"] as const;
+export const BRAND_SLOTS = ["header_logo", "footer_logo", "favicon", "og_image"] as const;
 export type BrandSlot = (typeof BRAND_SLOTS)[number];
 
 export const brandSlotKey = (slot: BrandSlot) => `public.brand.${slot}` as const;
 
 export const BRANDING_BUCKET = "platform-branding";
 export const MAX_BRAND_IMAGE_BYTES = 2 * 1024 * 1024;
+/** The social share image may be a photo, so it gets more room (4 MB: Vercel caps request bodies at 4.5 MB). */
+export const MAX_SHARE_IMAGE_BYTES = 4 * 1024 * 1024;
+export const maxBytesFor = (slot: BrandSlot) => (slot === "og_image" ? MAX_SHARE_IMAGE_BYTES : MAX_BRAND_IMAGE_BYTES);
 
 export type BrandImage = { path: string; width: number | null; height: number | null };
 
@@ -29,6 +33,8 @@ export type PublicPlatformConfig = {
   headerLogo: BrandImage | null;
   footerLogo: BrandImage | null;
   favicon: BrandImage | null;
+  /** Social share (Open Graph / X card) image for marketing pages, 1200x630. */
+  ogImage: BrandImage | null;
   ga4Id: string | null;
   /** "Continue with Google" for sellers (also needs the Google provider on in Supabase Auth). */
   googleForSellers: boolean;
@@ -42,6 +48,7 @@ export const DEFAULT_PUBLIC_CONFIG: PublicPlatformConfig = {
   headerLogo: null,
   footerLogo: null,
   favicon: null,
+  ogImage: null,
   ga4Id: null,
   googleForSellers: true,
   googleForShoppers: true,
@@ -52,7 +59,7 @@ export const DEFAULT_PUBLIC_CONFIG: PublicPlatformConfig = {
 export const GA4_ID_RE = /^G-[A-Z0-9]{4,20}$/;
 
 /** Only paths this feature writes are accepted back (no arbitrary URLs end up in <img>/<link>). */
-const PATH_RE = /^branding\/(header_logo|footer_logo|favicon)\/[0-9a-f-]{36}\.(png|jpg|webp|ico)$/;
+const PATH_RE = /^branding\/(header_logo|footer_logo|favicon|og_image)\/[0-9a-f-]{36}\.(png|jpg|webp|ico)$/;
 
 export function parseBrandImage(value: unknown): BrandImage | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -79,6 +86,7 @@ export function parsePublicConfig(rows: readonly { key: string; value: unknown }
     headerLogo: parseBrandImage(map.get(PUBLIC_CONFIG_KEYS.headerLogo)),
     footerLogo: parseBrandImage(map.get(PUBLIC_CONFIG_KEYS.footerLogo)),
     favicon: parseBrandImage(map.get(PUBLIC_CONFIG_KEYS.favicon)),
+    ogImage: parseBrandImage(map.get(PUBLIC_CONFIG_KEYS.ogImage)),
     ga4Id: parseGa4Id(map.get(PUBLIC_CONFIG_KEYS.ga4)),
     googleForSellers: bool(PUBLIC_CONFIG_KEYS.googleSellers, DEFAULT_PUBLIC_CONFIG.googleForSellers),
     googleForShoppers: bool(PUBLIC_CONFIG_KEYS.googleShoppers, DEFAULT_PUBLIC_CONFIG.googleForShoppers),
@@ -94,4 +102,19 @@ export function brandImageUrl(supabaseUrl: string, image: BrandImage): string {
 /** Magic-byte check for the favicon slot (.ico); other image types use lib/storage's sniffer. */
 export function isIco(bytes: Uint8Array): boolean {
   return bytes.length >= 6 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 1 && bytes[3] === 0 && (bytes[4]! > 0 || bytes[5]! > 0);
+}
+
+/**
+ * Size rules per slot; returns an error message or null. Logos: wide enough to stay sharp at
+ * 32px tall. Favicon: square, >= 32px. Share image: >= 600px wide, close to 1.91:1 (1200x630).
+ */
+export function checkBrandImageSize(slot: BrandSlot, width: number | null, height: number | null): string | null {
+  if (!width || !height) return null;
+  if (slot === "favicon") return width < 32 || width !== height ? "Favicons must be square, at least 32×32 (512×512 recommended)" : null;
+  if (slot === "og_image") {
+    const ratio = width / height;
+    if (width < 600) return "Share images must be at least 600px wide (1200×630 recommended)";
+    return ratio < 1.7 || ratio > 2.1 ? "Use a 1200×630 image (about 1.91:1) so it isn't cropped in link previews" : null;
+  }
+  return height < 24 ? "Logos must be at least 24px tall (about 64px recommended)" : null;
 }

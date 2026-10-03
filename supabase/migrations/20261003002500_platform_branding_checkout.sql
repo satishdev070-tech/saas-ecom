@@ -8,7 +8,8 @@
 --    platform.settings.manage (existing platform_settings_manage policy).
 -- 2. `platform-branding` storage bucket for those logo / favicon files: public read, writes only
 --    by platform staff with platform.settings.manage. Raster images and .ico only (no SVG).
--- 3. `resend` becomes a platform app credential (API key stored encrypted, server-only table).
+-- 3. `resend` becomes a platform app credential (API key stored encrypted, server-only table;
+--    RLS on with no policies). Creates the table if migration 2000 was never applied.
 -- 4. stores.checkout_settings: per-store checkout options. Missing keys mean the current
 --    behaviour (guest checkout allowed, "use my location" offered).
 --
@@ -27,8 +28,8 @@ create policy platform_settings_public_select on public.platform_settings for se
 
 -- 2 ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('platform-branding', 'platform-branding', true, 2097152, array['image/png', 'image/jpeg', 'image/webp', 'image/x-icon', 'image/vnd.microsoft.icon'])
-on conflict (id) do nothing;
+values ('platform-branding', 'platform-branding', true, 5242880, array['image/png', 'image/jpeg', 'image/webp', 'image/x-icon', 'image/vnd.microsoft.icon'])
+on conflict (id) do update set public = true, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists platform_branding_public_read on storage.objects;
 drop policy if exists platform_branding_insert on storage.objects;
@@ -44,6 +45,18 @@ create policy platform_branding_delete on storage.objects for delete to authenti
   using (bucket_id = 'platform-branding' and app.has_platform_permission('platform.settings.manage'));
 
 -- 3 ---------------------------------------------------------------------------
+-- platform_app_credentials normally comes from migration 2000; databases that skipped it get
+-- the same table here (identical definition), so the Resend key can be stored either way.
+create table if not exists public.platform_app_credentials (
+  provider text primary key,
+  client_id text check (char_length(client_id) <= 300),
+  secret_ciphertext text,
+  extra jsonb not null default '{}'::jsonb,
+  updated_by uuid references auth.users (id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+alter table public.platform_app_credentials enable row level security;
+grant all on public.platform_app_credentials to service_role;
 alter table public.platform_app_credentials drop constraint if exists platform_app_credentials_provider_check;
 alter table public.platform_app_credentials add constraint platform_app_credentials_provider_check
   check (provider in ('meta', 'pinterest', 'google', 'whatsapp', 'gemini', 'groq', 'anthropic', 'resend'));

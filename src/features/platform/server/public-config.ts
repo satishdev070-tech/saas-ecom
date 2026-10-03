@@ -16,8 +16,9 @@ import type { Json } from "@/lib/supabase/database.types";
 import {
   BRANDING_BUCKET,
   DEFAULT_PUBLIC_CONFIG,
-  MAX_BRAND_IMAGE_BYTES,
   brandImageUrl,
+  checkBrandImageSize,
+  maxBytesFor,
   brandSlotKey,
   isIco,
   parseBrandImage,
@@ -68,6 +69,21 @@ export function revalidatePublicConfig() {
   revalidatePath("/", "layout");
 }
 
+/** Turns storage errors into something an admin can act on (the usual cause: migration 2500 not applied). */
+function storageError(message: string): AppError {
+  const missing = /bucket not found/i.test(message);
+  logger.warn("platform.branding_upload_failed", { error: message });
+  return new AppError("VALIDATION", {
+    fieldErrors: {
+      file: [
+        missing
+          ? "The “platform-branding” storage bucket doesn't exist yet. Run supabase/dev/apply-2500.sql in the Supabase SQL editor, then upload again."
+          : `Storage refused the upload (${message.slice(0, 120)}). If this persists, re-run supabase/dev/apply-2500.sql, which sets the bucket's permissions.`,
+      ],
+    },
+  });
+}
+
 const EXT: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
 /**
@@ -79,7 +95,7 @@ export async function uploadBrandImage(ctx: PlatformContext, slot: BrandSlot, fi
   assertPlatformPermission(ctx, "platform.settings.manage");
   const fail = (message: string) => new AppError("VALIDATION", { fieldErrors: { file: [message] } });
   if (!(file instanceof File) || file.size === 0) throw fail("Choose an image to upload");
-  if (file.size > MAX_BRAND_IMAGE_BYTES) throw fail("Images must be 2 MB or smaller");
+  if (file.size > maxBytesFor(slot)) throw fail(`Images must be ${maxBytesFor(slot) / 1024 / 1024} MB or smaller`);
   const bytes = new Uint8Array(await file.arrayBuffer());
   const sniffed = sniffImage(bytes);
   let mime: string;
@@ -103,13 +119,14 @@ export async function uploadBrandImage(ctx: PlatformContext, slot: BrandSlot, fi
     } catch {
       throw fail("That image couldn't be read");
     }
-    if (slot === "favicon" && width && height && (width < 32 || width !== height)) throw fail("Favicons must be square, at least 32×32 (512×512 recommended)");
+    const sizeError = checkBrandImageSize(slot, width, height);
+    if (sizeError) throw fail(sizeError);
   }
 
   const supabase = await createSupabaseServerClient();
   const path = `branding/${slot}/${randomUUID()}.${ext}`;
   const { error: upErr } = await supabase.storage.from(BRANDING_BUCKET).upload(path, bytes, { contentType: mime, cacheControl: "31536000", upsert: false });
-  if (upErr) throw new AppError("FORBIDDEN", { message: "Upload was not permitted.", context: { storage: upErr.message } });
+  if (upErr) throw storageError(upErr.message);
 
   const key = brandSlotKey(slot);
   const { data: before } = await supabase.from("platform_settings").select("value").eq("key", key).maybeSingle();
@@ -117,7 +134,7 @@ export async function uploadBrandImage(ctx: PlatformContext, slot: BrandSlot, fi
   const { error } = await supabase.from("platform_settings").upsert({ key, value: value as unknown as Json, updated_by: ctx.user.id, updated_at: new Date().toISOString() }, { onConflict: "key" });
   if (error) {
     await supabase.storage.from(BRANDING_BUCKET).remove([path]);
-    throw new AppError("INTERNAL", { cause: error });
+    throw new AppError("VALIDATION", { fieldErrors: { file: ["The image uploaded but couldn't be saved as a setting. Check that you have the platform settings permission."] }, context: { db: error.message } });
   }
   const old = parseBrandImage(before?.value);
   if (old && old.path !== path) await supabase.storage.from(BRANDING_BUCKET).remove([old.path]);
@@ -138,6 +155,11 @@ export async function clearBrandImage(ctx: PlatformContext, slot: BrandSlot): Pr
 }
 
 /** Favicon metadata for platform pages (marketing, seller auth, onboarding); undefined keeps the default icon. */
+/** Absolute URL of the uploaded social share image, or null (the generated /og image is used). */
+export async function shareImageUrl(): Promise<string | null> {
+  return brandImageView((await getPublicPlatformConfig()).ogImage)?.src ?? null;
+}
+
 export async function platformIconMetadata(): Promise<Metadata> {
   const favicon = brandImageView((await getPublicPlatformConfig()).favicon);
   return favicon ? { icons: { icon: favicon.src, apple: favicon.src } } : {};
