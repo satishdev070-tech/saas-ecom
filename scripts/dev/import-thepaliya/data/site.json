@@ -1,0 +1,189 @@
+{
+ "source": "https://thepaliya.com",
+ "scraped_at": "2026-09-26",
+ "store": {
+  "name": "Ramya Glamorous",
+  "email": "ramyaglamrous45@gmail.com",
+  "phone": "+919001259163",
+  "whatsapp": "+917340378934",
+  "address": {
+   "line1": "Jaipur",
+   "city": "Jaipur",
+   "state": "Rajasthan"
+  },
+  "social": {
+   "instagram": "https://www.instagram.com/rbypaliya/",
+   "facebook": "https://www.facebook.com/rbyAyushi"
+  },
+  "seo": {
+   "title": "Ramya Glamorous",
+   "description": "Ramya Glamorous"
+  },
+  "logo": "about__logo__logo-680d09bd42cf8.jpg",
+  "favicon": "about__favicon__favicon-680d09bd434e2.png",
+  "og_image": "about__og_image__og_image-680faa3f769f7.jpeg",
+  "footer_about": "Rooted in tradition, yet designed for the modern wardrobe, Ramya Glamorous is where traditional Indian textile meets contemporary style."
+ },
+ "about": "Rooted in tradition, yet designed for the modern wardrobe, Ramya Glamorous is where traditional Indian textile meets contemporary style. We offer a wide range of apparel that’s as versatile as it is beautiful — perfect for casual days, or relaxed elegance.",
+ "faqs": [
+  {
+   "question": "What is Ramya Fashion?",
+   "answer": "Ramya Fashion is an Indian clothing brand dedicated to creating stylish, comfortable, and affordable fashion for girls and women. We blend tradition with trend to help you look and feel your best every day."
+  },
+  {
+   "question": "Do you offer customizations?",
+   "answer": "Yes, we offer customization on select products including size adjustments and minor design tweaks. Please contact our customer support team for more details before placing your order."
+  },
+  {
+   "question": "What sizes do you offer?",
+   "answer": "Our sizes typically range from S to XL Please refer to our [Size Guide] (link) for detailed measurements. If you need a custom size, feel free to reach out."
+  },
+  {
+   "question": "How do I place an order?",
+   "answer": "You can place an order directly through our website. Simply select your product, choose your size, add to cart, and follow the checkout process."
+  },
+  {
+   "question": "How long will it take to receive my order?",
+   "answer": "Orders within India are usually delivered within 5-7 business days. International orders may take 10-15 business days. Customized items may take longer."
+  },
+  {
+   "question": "Are the clothes suitable for everyday wear?",
+   "answer": "Absolutely! Comfort is at the core of everything we design. Whether you’re going to college, brunch with the girls, or just chilling at home, Ramya Fashion has something comfy and cute for you."
+  },
+  {
+   "question": "Do you launch new collections regularly?",
+   "answer": "Yes! We drop new collections every season and also have surprise limited edition drops throughout the year. Follow us on Instagram to stay updated."
+  }
+ ],
+ "contact": {
+  "email": "ramyaglamrous45@gmail.com",
+  "mobile": "9001259163",
+  "address": "Jaipur, Rajsthan"
+ },
+ "categories": [
+  {
+   "slug": "glam-baby",
+   "name": "Glam Baby",
+   "image": "categories__category-6898aa02cbac0.png",
+   "children": []
+  },
+  {
+   "slug": "glam-girl",
+   "name": "Glam Girl",
+   "image": "categories__category-6898a9a07775c.jpeg",
+   "children": [
+    {
+     "slug": "nanhi-pari",
+     "name": "nanhi-pari"
+    }
+   ]
+  },
+  {
+   "slug": "glam-boy",
+   "name": "Glam Boy",
+   "image": "categories__category-6898a9cc32dd4.jpeg",
+   "children": []
+  },
+  {
+   "slug": "collections",
+   "name": "Collections",
+   "image": "categories__category-6898a97605335.jpeg",
+   "children": [
+    {
+     "slug": "summeride",
+     "name": "Summeride"
+    },
+    {
+     "slug": "naya-parampara",
+     "name": "Nayā Paramparā"
+    },
+    {
+     "slug": "samkaleen-sanskruti",
+     "name": "Samkaleen Sanskruti"
+    },
+    {
+     "slug": "sahaj-shringaar",
+     "name": "Sahaj Shringaar"
+    },
+    {
+     "slug": "aaram-se-anokha",
+     "name": "Aaram Se Anokha"
+    },
+    {
+     "slug": "behtari-sahaj",
+     "name": "Behtarī Sahaj"
+    },
+    {
+     "slug": "women-coord-set",
+     "name": "Women Co-ord Set"
+    },
+    {
+     "slug": "women-top",
+     "name": "Women Top"
+    },
+    {
+     "slug": "women-ethnic-top",
+     "name": "Women Ethnic Top"
+    },
+    {
+     "slug": "women-tunic-top",
+     "name": "Women Tunic Top"
+    }
+   ]
+  }
+ ],
+ "home": {
+  "hero": [
+   "banners__banner-6898ba98e866f.png",
+   "banners__banner-6898baa950c06.png",
+   "banners__banner-6898bab8eacd4.png"
+  ],
+  "offers": [
+   "banners__banner-6898befce5548.png",
+   "banners__banner-6898bf090e3de.png",
+   "banners__banner-6898bf1561a21.png"
+  ],
+  "instagram_banner": {
+   "image": "banners__banner-6898c2daa84af.png",
+   "href": "https://www.instagram.com/rbypaliya/"
+  },
+  "best_selling": {
+   "eyebrow": "top Best Products",
+   "heading": "Best Selling Products",
+   "order": [
+    "oblong-neckline-block-print-dress-blue-green",
+    "blue-printed-pocket-dress",
+    "blue-lehariya-dress",
+    "blue-green-bow-dress",
+    "straight-cut-v-neck-kaftan-dress",
+    "floral-print-cotton-co-ord-set-waistcoat-pants",
+    "floral-print-sleeveless-cotton-top",
+    "floral-print-cotton-kurti-bell-sleeves",
+    "floral-print-crop-top-maxi-skirt-set",
+    "floral-print-cotton-tunic-top"
+   ]
+  },
+  "new_arrivals": {
+   "eyebrow": "New Launching",
+   "heading": "New Arrival Products",
+   "order": [
+    "blue-printed-pocket-dress",
+    "oblong-neckline-block-print-dress-blue-green",
+    "blue-lehariya-dress",
+    "blue-green-bow-dress",
+    "straight-cut-v-neck-kaftan-dress",
+    "floral-print-cotton-co-ord-set-waistcoat-pants",
+    "floral-print-sleeveless-cotton-top",
+    "floral-print-cotton-kurti-bell-sleeves",
+    "floral-print-crop-top-maxi-skirt-set",
+    "floral-print-cotton-tunic-top"
+   ]
+  }
+ },
+ "not_migrated": {
+  "blog": "Old /blogs page throws a server error (no posts retrievable)",
+  "gallery": "Old gallery page is empty",
+  "policies": "Privacy, refund and terms pages have no content on the old site",
+  "videos": "6 product videos are QuickTime .mov (4 over 10 MB); bucket accepts mp4 up to 10 MB"
+ }
+}

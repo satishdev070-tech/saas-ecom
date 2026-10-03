@@ -1,0 +1,12 @@
+name = "paliya-domain-router"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+# Attach to the Cloudflare for SaaS fallback origin / custom hostnames:
+# routes = [{ pattern = "*/*", zone_name = "paliya.store" }]
+
+[vars]
+ORIGIN_URL = "https://origin.paliya.store"
+
+# Secret (not in this file): wrangler secret put EDGE_SHARED_SECRET

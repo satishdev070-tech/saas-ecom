@@ -1,0 +1,1098 @@
+{
+ "chinar": {
+  "tokens": {
+   "colors": {
+    "primary": "#2b1d16",
+    "secondary": "#6b3a22",
+    "accent": "#b8732f",
+    "background": "#f7f2ea",
+    "text": "#2b1d16",
+    "border": "#e4d8c8",
+    "sale": "#8f2d1f"
+   },
+   "headingFont": "editorial-serif",
+   "bodyFont": "humanist-sans",
+   "headingCase": "normal",
+   "buttonShape": "square",
+   "buttonVariant": "solid",
+   "cardRadius": "none",
+   "containerWidth": "wide",
+   "spacing": "airy"
+  },
+  "header": {
+   "sticky": true,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-center",
+  "productCard": {
+   "imageRatio": "tall",
+   "textAlign": "center",
+   "badgeStyle": "minimal",
+   "showQuickAdd": false,
+   "showRating": false,
+   "secondImageOnHover": true
+  },
+  "footerTone": "dark",
+  "announcementTone": "dark",
+  "inlineMenu": false,
+  "hero": {
+   "align": "left",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "full",
+     "overlay": 30
+    }
+   ],
+   [
+    "BrandStory",
+    {}
+   ],
+   [
+    "CategoryGrid",
+    {
+     "mode": "auto",
+     "limit": 4,
+     "shape": "portrait"
+    }
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "collection",
+     "limit": 6,
+     "columns": 3
+    }
+   ],
+   [
+    "EditorialImageText",
+    {
+     "imagePosition": "right",
+     "tone": "muted"
+    }
+   ],
+   [
+    "Testimonials",
+    {}
+   ],
+   [
+    "Newsletter",
+    {
+     "tone": "muted"
+    }
+   ]
+  ]
+ },
+ "gulaabrang": {
+  "tokens": {
+   "colors": {
+    "primary": "#c2185b",
+    "secondary": "#ff9f1c",
+    "accent": "#ff9f1c",
+    "background": "#fff9f4",
+    "text": "#2d1b24",
+    "border": "#f3d9d2",
+    "sale": "#d62839"
+   },
+   "headingFont": "playfair",
+   "bodyFont": "dm-sans",
+   "headingCase": "normal",
+   "buttonShape": "pill",
+   "buttonVariant": "solid",
+   "cardRadius": "md",
+   "containerWidth": "wide",
+   "spacing": "comfortable"
+  },
+  "header": {
+   "sticky": true,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-center",
+  "productCard": {
+   "imageRatio": "portrait",
+   "textAlign": "left",
+   "badgeStyle": "filled",
+   "showQuickAdd": true,
+   "showRating": true,
+   "showDiscountPercent": true,
+   "secondImageOnHover": true
+  },
+  "footerTone": "dark",
+  "announcementTone": "accent",
+  "inlineMenu": false,
+  "hero": {
+   "align": "left",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "large",
+     "overlay": 15
+    }
+   ],
+   [
+    "CategoryGrid",
+    {
+     "mode": "auto",
+     "limit": 6,
+     "shape": "circle"
+    }
+   ],
+   [
+    "NewArrivals",
+    {
+     "limit": 8,
+     "layout": "carousel"
+    }
+   ],
+   [
+    "PromoBanner",
+    {
+     "aspect": "square"
+    }
+   ],
+   [
+    "Bestseller",
+    {
+     "limit": 8,
+     "layout": "grid"
+    }
+   ],
+   [
+    "SaleBanner",
+    {}
+   ],
+   [
+    "SocialProof",
+    {
+     "handle": "gulaabrang"
+    }
+   ],
+   [
+    "Reviews",
+    {
+     "minRating": 4,
+     "limit": 6
+    }
+   ],
+   [
+    "Newsletter",
+    {
+     "tone": "accent"
+    }
+   ]
+  ]
+ },
+ "pinkcity": {
+  "tokens": {
+   "colors": {
+    "primary": "#1e1e24",
+    "secondary": "#d6336c",
+    "accent": "#d6336c",
+    "background": "#ffffff",
+    "text": "#1e1e24",
+    "border": "#ececef",
+    "sale": "#d6336c"
+   },
+   "headingFont": "dm-sans",
+   "bodyFont": "dm-sans",
+   "headingCase": "normal",
+   "buttonShape": "rounded",
+   "buttonVariant": "solid",
+   "cardRadius": "sm",
+   "containerWidth": "wide",
+   "spacing": "compact"
+  },
+  "header": {
+   "sticky": true,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-left",
+  "productCard": {
+   "imageRatio": "portrait",
+   "textAlign": "left",
+   "badgeStyle": "filled",
+   "showQuickAdd": true,
+   "showRating": true,
+   "showDiscountPercent": true,
+   "secondImageOnHover": true
+  },
+  "footerTone": "light",
+  "announcementTone": "dark",
+  "inlineMenu": false,
+  "hero": {
+   "align": "left",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "medium",
+     "overlay": 20
+    }
+   ],
+   [
+    "TrustBadges",
+    {
+     "tone": "muted"
+    }
+   ],
+   [
+    "CategoryGrid",
+    {
+     "mode": "auto",
+     "limit": 6,
+     "shape": "square"
+    }
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "category",
+     "limit": 8,
+     "columns": 4
+    }
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "category",
+     "limit": 4,
+     "columns": 4
+    }
+   ],
+   [
+    "CollectionGrid",
+    {
+     "mode": "auto",
+     "limit": 3,
+     "columns": 3
+    }
+   ],
+   [
+    "Bestseller",
+    {
+     "limit": 8,
+     "layout": "carousel"
+    }
+   ],
+   [
+    "FAQ",
+    {
+     "source": "store",
+     "limit": 5
+    }
+   ]
+  ]
+ },
+ "mitti": {
+  "tokens": {
+   "colors": {
+    "primary": "#3b2e22",
+    "secondary": "#9c4a2f",
+    "accent": "#9c4a2f",
+    "background": "#f4efe7",
+    "text": "#33291f",
+    "border": "#ddd2c1",
+    "sale": "#9c4a2f"
+   },
+   "headingFont": "classic-serif",
+   "bodyFont": "humanist-sans",
+   "headingCase": "normal",
+   "buttonShape": "square",
+   "buttonVariant": "outline",
+   "cardRadius": "none",
+   "containerWidth": "default",
+   "spacing": "airy"
+  },
+  "header": {
+   "sticky": false,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-left",
+  "productCard": {
+   "imageRatio": "portrait",
+   "textAlign": "left",
+   "badgeStyle": "minimal",
+   "showQuickAdd": false,
+   "showRating": false,
+   "showDiscountPercent": false,
+   "secondImageOnHover": true
+  },
+  "footerTone": "muted",
+  "announcementTone": "muted",
+  "inlineMenu": true,
+  "hero": {
+   "align": "center",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "large",
+     "overlay": 25
+    }
+   ],
+   [
+    "EditorialImageText",
+    {
+     "imagePosition": "left",
+     "tone": "light"
+    }
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "collection",
+     "limit": 6,
+     "columns": 3
+    }
+   ],
+   [
+    "Lookbook",
+    {
+     "layout": "row"
+    }
+   ],
+   [
+    "BrandStory",
+    {}
+   ],
+   [
+    "Newsletter",
+    {
+     "tone": "light"
+    }
+   ]
+  ]
+ },
+ "rangeela": {
+  "tokens": {
+   "colors": {
+    "primary": "#111111",
+    "secondary": "#e63946",
+    "accent": "#e63946",
+    "background": "#ffffff",
+    "text": "#111111",
+    "border": "#e9e9e9",
+    "sale": "#e63946"
+   },
+   "headingFont": "geometric-sans",
+   "bodyFont": "geometric-sans",
+   "headingCase": "uppercase",
+   "buttonShape": "square",
+   "buttonVariant": "solid",
+   "cardRadius": "none",
+   "containerWidth": "full",
+   "spacing": "compact"
+  },
+  "header": {
+   "sticky": true,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-left",
+  "productCard": {
+   "imageRatio": "portrait",
+   "textAlign": "left",
+   "badgeStyle": "filled",
+   "showQuickAdd": true,
+   "showRating": true,
+   "showDiscountPercent": true,
+   "secondImageOnHover": true
+  },
+  "footerTone": "dark",
+  "announcementTone": "accent",
+  "inlineMenu": true,
+  "hero": {
+   "align": "center",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "medium",
+     "overlay": 25
+    }
+   ],
+   [
+    "SaleBanner",
+    {}
+   ],
+   [
+    "CategoryGrid",
+    {
+     "mode": "auto",
+     "limit": 6,
+     "shape": "square"
+    }
+   ],
+   [
+    "ProductCarousel",
+    {
+     "source": "sale",
+     "limit": 10
+    }
+   ],
+   [
+    "PromoBanner",
+    {
+     "aspect": "portrait"
+    }
+   ],
+   [
+    "NewArrivals",
+    {
+     "limit": 10,
+     "layout": "carousel"
+    }
+   ],
+   [
+    "Bestseller",
+    {
+     "limit": 8,
+     "layout": "grid"
+    }
+   ],
+   [
+    "TrustBadges",
+    {
+     "tone": "dark"
+    }
+   ]
+  ]
+ },
+ "noor": {
+  "tokens": {
+   "colors": {
+    "primary": "#4a2c34",
+    "secondary": "#c9776b",
+    "accent": "#c9776b",
+    "background": "#fcf7f5",
+    "text": "#3d2a2f",
+    "border": "#efdfd9",
+    "sale": "#b5485b"
+   },
+   "headingFont": "playfair",
+   "bodyFont": "dm-sans",
+   "headingCase": "normal",
+   "buttonShape": "rounded",
+   "buttonVariant": "solid",
+   "cardRadius": "sm",
+   "containerWidth": "wide",
+   "spacing": "comfortable"
+  },
+  "header": {
+   "sticky": true,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-center",
+  "productCard": {
+   "imageRatio": "tall",
+   "textAlign": "center",
+   "badgeStyle": "minimal",
+   "showQuickAdd": false,
+   "showRating": true,
+   "showDiscountPercent": true,
+   "secondImageOnHover": true
+  },
+  "footerTone": "muted",
+  "announcementTone": "muted",
+  "inlineMenu": false,
+  "hero": {
+   "align": "left",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "large",
+     "overlay": 20
+    }
+   ],
+   [
+    "CollectionGrid",
+    {
+     "mode": "auto",
+     "limit": 4,
+     "columns": 4
+    }
+   ],
+   [
+    "NewArrivals",
+    {
+     "limit": 8,
+     "layout": "carousel"
+    }
+   ],
+   [
+    "EditorialImageText",
+    {
+     "imagePosition": "right",
+     "tone": "light"
+    }
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "category",
+     "limit": 4,
+     "columns": 4
+    }
+   ],
+   [
+    "Testimonials",
+    {}
+   ],
+   [
+    "Reviews",
+    {
+     "minRating": 4,
+     "limit": 3
+    }
+   ],
+   [
+    "Newsletter",
+    {
+     "tone": "muted"
+    }
+   ]
+  ]
+ },
+ "vivaah": {
+  "tokens": {
+   "colors": {
+    "primary": "#4a0f1c",
+    "secondary": "#c59d5f",
+    "accent": "#c59d5f",
+    "background": "#faf6ef",
+    "text": "#2b1418",
+    "border": "#eadfcd",
+    "sale": "#8c1c2c"
+   },
+   "headingFont": "marcellus",
+   "bodyFont": "humanist-sans",
+   "headingCase": "uppercase",
+   "buttonShape": "square",
+   "buttonVariant": "solid",
+   "cardRadius": "none",
+   "containerWidth": "wide",
+   "spacing": "airy"
+  },
+  "header": {
+   "sticky": true,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-center",
+  "productCard": {
+   "imageRatio": "tall",
+   "textAlign": "center",
+   "badgeStyle": "minimal",
+   "showQuickAdd": false,
+   "showRating": false,
+   "showDiscountPercent": false,
+   "secondImageOnHover": true
+  },
+  "footerTone": "dark",
+  "announcementTone": "dark",
+  "inlineMenu": false,
+  "hero": {
+   "align": "center",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "full",
+     "overlay": 35
+    }
+   ],
+   [
+    "CollectionGrid",
+    {
+     "mode": "auto",
+     "limit": 4,
+     "columns": 4
+    }
+   ],
+   [
+    "Lookbook",
+    {
+     "layout": "masonry"
+    }
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "category",
+     "limit": 3,
+     "columns": 3
+    }
+   ],
+   [
+    "EditorialImageText",
+    {
+     "imagePosition": "left",
+     "tone": "dark"
+    }
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "category",
+     "limit": 3,
+     "columns": 3
+    }
+   ],
+   [
+    "Testimonials",
+    {}
+   ],
+   [
+    "FAQ",
+    {
+     "source": "store",
+     "limit": 5
+    }
+   ]
+  ]
+ },
+ "studioneel": {
+  "tokens": {
+   "colors": {
+    "primary": "#111111",
+    "secondary": "#111111",
+    "accent": "#111111",
+    "background": "#fafafa",
+    "text": "#111111",
+    "border": "#e6e6e6",
+    "sale": "#111111"
+   },
+   "headingFont": "modern-sans",
+   "bodyFont": "modern-sans",
+   "headingCase": "normal",
+   "buttonShape": "square",
+   "buttonVariant": "solid",
+   "cardRadius": "none",
+   "containerWidth": "wide",
+   "spacing": "airy"
+  },
+  "header": {
+   "sticky": true,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-left",
+  "productCard": {
+   "imageRatio": "portrait",
+   "textAlign": "left",
+   "badgeStyle": "minimal",
+   "showQuickAdd": false,
+   "showRating": false,
+   "showDiscountPercent": false,
+   "showBadges": false,
+   "secondImageOnHover": true
+  },
+  "footerTone": "light",
+  "announcementTone": "light",
+  "inlineMenu": true,
+  "hero": {
+   "align": "left",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "full",
+     "overlay": 10
+    }
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "collection",
+     "limit": 8,
+     "columns": 4
+    }
+   ],
+   [
+    "EditorialImageText",
+    {
+     "imagePosition": "right",
+     "tone": "light"
+    }
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "category",
+     "limit": 4,
+     "columns": 4
+    }
+   ],
+   [
+    "Newsletter",
+    {
+     "tone": "light"
+    }
+   ]
+  ]
+ },
+ "desidrip": {
+  "tokens": {
+   "colors": {
+    "primary": "#0f0f0f",
+    "secondary": "#7b61ff",
+    "accent": "#7b61ff",
+    "background": "#fffdf5",
+    "text": "#0f0f0f",
+    "border": "#0f0f0f",
+    "sale": "#ff3d71"
+   },
+   "headingFont": "grotesk",
+   "bodyFont": "grotesk",
+   "headingCase": "uppercase",
+   "buttonShape": "pill",
+   "buttonVariant": "solid",
+   "cardRadius": "lg",
+   "containerWidth": "full",
+   "spacing": "compact"
+  },
+  "header": {
+   "sticky": true,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-left",
+  "productCard": {
+   "imageRatio": "square",
+   "textAlign": "left",
+   "badgeStyle": "filled",
+   "showQuickAdd": true,
+   "showRating": true,
+   "showDiscountPercent": true,
+   "secondImageOnHover": true
+  },
+  "footerTone": "dark",
+  "announcementTone": "dark",
+  "inlineMenu": true,
+  "hero": {
+   "align": "left",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "AnnouncementBar",
+    {
+     "tone": "accent"
+    }
+   ],
+   [
+    "Hero",
+    {
+     "height": "large",
+     "overlay": 10
+    }
+   ],
+   [
+    "NewArrivals",
+    {
+     "limit": 10,
+     "layout": "carousel"
+    }
+   ],
+   [
+    "SocialProof",
+    {
+     "handle": "desidrip"
+    }
+   ],
+   [
+    "PromoBanner",
+    {
+     "aspect": "square"
+    }
+   ],
+   [
+    "Bestseller",
+    {
+     "limit": 8,
+     "layout": "grid"
+    }
+   ],
+   [
+    "Testimonials",
+    {}
+   ],
+   [
+    "Newsletter",
+    {
+     "tone": "accent"
+    }
+   ]
+  ]
+ },
+ "anaya": {
+  "tokens": {
+   "colors": {
+    "primary": "#1a1a1a",
+    "secondary": "#8c6d46",
+    "accent": "#8c6d46",
+    "background": "#f8f5f0",
+    "text": "#1a1a1a",
+    "border": "#e7e0d4",
+    "sale": "#6e4a2a"
+   },
+   "headingFont": "didone",
+   "bodyFont": "geometric-sans",
+   "headingCase": "uppercase",
+   "buttonShape": "square",
+   "buttonVariant": "outline",
+   "cardRadius": "none",
+   "containerWidth": "wide",
+   "spacing": "airy"
+  },
+  "header": {
+   "sticky": false,
+   "showStoreName": true
+  },
+  "headerLayout": "logo-center",
+  "productCard": {
+   "imageRatio": "tall",
+   "textAlign": "center",
+   "badgeStyle": "minimal",
+   "showQuickAdd": false,
+   "showRating": false,
+   "showDiscountPercent": false,
+   "showBadges": false,
+   "secondImageOnHover": true
+  },
+  "footerTone": "light",
+  "announcementTone": "dark",
+  "inlineMenu": false,
+  "hero": {
+   "align": "center",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "full",
+     "overlay": 40
+    }
+   ],
+   [
+    "CollectionGrid",
+    {
+     "mode": "auto",
+     "limit": 2,
+     "columns": 2
+    }
+   ],
+   [
+    "BrandStory",
+    {}
+   ],
+   [
+    "ProductGrid",
+    {
+     "source": "collection",
+     "limit": 6,
+     "columns": 3
+    }
+   ],
+   [
+    "EditorialImageText",
+    {
+     "imagePosition": "left",
+     "tone": "dark"
+    }
+   ],
+   [
+    "Newsletter",
+    {
+     "tone": "light"
+    }
+   ]
+  ]
+ },
+ "jaipurboutique": {
+  "tokens": {
+   "colors": {
+    "primary": "#121212",
+    "secondary": "#2f4f3e",
+    "accent": "#b0463c",
+    "background": "#ffffff",
+    "text": "#121212",
+    "border": "#e6e6e6",
+    "sale": "#c0392b"
+   },
+   "headingFont": "geometric-sans",
+   "bodyFont": "modern-sans",
+   "headingCase": "uppercase",
+   "buttonShape": "square",
+   "buttonVariant": "solid",
+   "cardRadius": "none",
+   "containerWidth": "wide",
+   "spacing": "comfortable",
+   "sectionHeadingAlign": "center"
+  },
+  "header": {
+   "sticky": true,
+   "showStoreName": true,
+   "showSearch": true,
+   "showAccount": true,
+   "showWishlist": false,
+   "showCart": true
+  },
+  "headerLayout": "logo-center",
+  "menuStyle": "drawer",
+  "announcementMode": "rotate",
+  "productCard": {
+   "imageRatio": "portrait",
+   "textAlign": "left",
+   "badgeStyle": "pill",
+   "showQuickAdd": false,
+   "showRating": true,
+   "secondImageOnHover": true,
+   "showSizes": true,
+   "showBadges": true,
+   "showComparePrice": true,
+   "showDiscountPercent": true
+  },
+  "footerTone": "light",
+  "announcementTone": "muted",
+  "inlineMenu": false,
+  "hero": {
+   "align": "center",
+   "textTone": "light"
+  },
+  "home": [
+   [
+    "Hero",
+    {
+     "height": "large",
+     "overlay": 0
+    }
+   ],
+   [
+    "CategoryGrid",
+    {
+     "mode": "auto",
+     "limit": 8,
+     "shape": "circle"
+    }
+   ],
+   [
+    "ProductCarousel",
+    {
+     "source": "newest",
+     "limit": 8
+    }
+   ],
+   [
+    "VideoShop",
+    {
+     "layout": "cards"
+    }
+   ],
+   [
+    "ProductCarousel",
+    {
+     "source": "bestselling",
+     "limit": 8
+    }
+   ],
+   [
+    "Marquee",
+    {
+     "size": "large",
+     "speed": "slow",
+     "tone": "light",
+     "separator": "none"
+    }
+   ],
+   [
+    "CategoryGrid",
+    {
+     "mode": "auto",
+     "limit": 4,
+     "shape": "portrait"
+    }
+   ],
+   [
+    "ProductCarousel",
+    {
+     "source": "featured",
+     "limit": 8
+    }
+   ],
+   [
+    "Reviews",
+    {
+     "limit": 6
+    }
+   ],
+   [
+    "TrustBadges",
+    {
+     "layout": "marquee",
+     "tone": "muted"
+    }
+   ]
+  ],
+  "collection": [
+   [
+    "Marquee",
+    {
+     "size": "small",
+     "speed": "normal",
+     "tone": "dark",
+     "separator": "dot"
+    }
+   ],
+   [
+    "PageContent",
+    {}
+   ],
+   [
+    "TrustBadges",
+    {
+     "layout": "marquee",
+     "tone": "muted"
+    }
+   ]
+  ],
+  "product": [
+   [
+    "PageContent",
+    {}
+   ],
+   [
+    "Marquee",
+    {
+     "size": "small",
+     "speed": "normal",
+     "tone": "dark",
+     "separator": "dot"
+    }
+   ],
+   [
+    "TrustBadges",
+    {
+     "layout": "marquee",
+     "tone": "muted"
+    }
+   ]
+  ]
+ }
+}

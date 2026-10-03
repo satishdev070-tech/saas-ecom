@@ -1,0 +1,103 @@
+/*
+ * Storefront loading states (all stores): skeletons shown by the route loading.tsx files and the
+ * thin top progress bar for client navigations. Themed only through the --sf-* tokens, so every
+ * theme gets matching colours. No layout impact: skeletons live inside <main>, the bar is fixed.
+ */
+
+/* In the components layer so Tailwind utilities (h-*, w-*, hidden, rounded-*) override it. */
+@layer components {
+.sf-skel {
+  display: block;
+  border-radius: var(--sf-radius-card, 0);
+  background-color: color-mix(in srgb, var(--sf-border, #e6e6e6) 70%, var(--sf-bg, #fff));
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--sf-bg, #fff) 65%, transparent) 50%,
+    transparent 80%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: sf-skel-shimmer 1.6s ease-in-out infinite;
+}
+.sf-skel-line {
+  height: 0.8rem;
+  border-radius: 999px;
+}
+.sf-skel-brand {
+  font-family: var(--sf-font-heading);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: transparent;
+  background: linear-gradient(
+      100deg,
+      var(--sf-muted, #888) 30%,
+      var(--sf-accent, #999) 50%,
+      var(--sf-muted, #888) 70%
+    )
+    0 0 / 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: sf-skel-shimmer 2.2s ease-in-out infinite;
+  opacity: 0.75;
+}
+/* Fade the skeleton in after a beat so fast (prefetched) navigations never flash it. */
+.sf-loading {
+  animation: sf-loading-in 0.3s ease-out 0.15s both;
+}
+
+@keyframes sf-skel-shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+@keyframes sf-loading-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Top progress bar (client navigations). */
+.sf-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 9999;
+  height: 2.5px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease 0.1s;
+}
+.sf-progress[data-state="loading"] {
+  opacity: 1;
+  transition-delay: 0s;
+}
+.sf-progress > span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  background: var(--sf-accent, currentColor);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--sf-accent, currentColor) 60%, transparent);
+  transition: transform 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-skel,
+  .sf-skel-brand {
+    animation: none;
+  }
+  .sf-loading {
+    animation: none;
+  }
+  .sf-progress > span {
+    transition: none;
+  }
+}
+}

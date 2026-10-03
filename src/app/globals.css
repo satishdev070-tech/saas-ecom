@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+/*
+ * Platform design system (seller dashboard, super admin, auth, marketing). See docs/DESIGN_SYSTEM.md.
+ * Storefronts use their own --sf-* tokens from the tenant theme and never read these.
+ *
+ * Appearance: light is the default. `data-theme="dark"` on <html> (set before paint by the
+ * inline script in app/layout.tsx from the saved preference) switches the whole platform UI.
+ * Any subtree can pin a theme with its own data-theme attribute.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --background: #f6f6f4;
+  --surface: #ffffff;
+  --surface-secondary: #f1f0ed;
+  --surface-elevated: #ffffff;
+  --foreground: #18181b;
+  --muted: #66656b;
+  --subtle: #8c8b91;
+  --border: #e5e4e0;
+  --border-strong: #d2d1cc;
+  --primary: #18181b;
+  --primary-foreground: #ffffff;
+  --accent: #a4432a;
+  --accent-foreground: #ffffff;
+  --accent-soft: #f7ebe6;
+  --success: #15803d;
+  --warning: #b45309;
+  --error: #b91c1c;
+  --info: #1d4ed8;
+  --focus: #a4432a;
+
+  --shadow-xs: 0 1px 1px rgb(24 24 27 / 0.04);
+  --shadow-sm: 0 1px 2px rgb(24 24 27 / 0.06), 0 1px 1px rgb(24 24 27 / 0.03);
+  --shadow-md: 0 4px 12px -2px rgb(24 24 27 / 0.08), 0 2px 4px -2px rgb(24 24 27 / 0.05);
+  --shadow-lg: 0 16px 32px -12px rgb(24 24 27 / 0.18);
+}
+
+/* Dark is its own palette: warm-neutral charcoal surfaces, softened text, brighter accents. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #111113;
+  --surface: #18181b;
+  --surface-secondary: #1f1f23;
+  --surface-elevated: #232327;
+  --foreground: #ececee;
+  --muted: #a1a1a8;
+  --subtle: #7c7c84;
+  --border: #2a2a2f;
+  --border-strong: #3a3a41;
+  --primary: #f4f4f5;
+  --primary-foreground: #18181b;
+  --accent: #e8896a;
+  --accent-foreground: #1a0f0b;
+  --accent-soft: #2b1d18;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --info: #7aa2ff;
+  --focus: #e8896a;
+
+  --shadow-xs: 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 6px 16px -4px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 18px 40px -12px rgb(0 0 0 / 0.6);
+}
+
+/*
+ * Platform console: same components, cool slate neutrals and a blue accent, so staff can always
+ * tell they are operating the platform rather than a store. Light and dark variants.
+ */
+.theme-console {
+  --background: #f4f5f7;
+  --surface: #ffffff;
+  --surface-secondary: #eef0f3;
+  --surface-elevated: #ffffff;
+  --foreground: #0f172a;
+  --muted: #586174;
+  --subtle: #8a92a3;
+  --border: #e1e4ea;
+  --border-strong: #cdd2da;
+  --primary: #0f172a;
+  --primary-foreground: #f8fafc;
+  --accent: #2f5bd3;
+  --accent-foreground: #ffffff;
+  --accent-soft: #e9effd;
+  --focus: #2f5bd3;
+  background: var(--background);
+  color: var(--foreground);
+}
+[data-theme="dark"] .theme-console,
+.theme-console[data-theme="dark"] {
+  --background: #0b0e13;
+  --surface: #12161d;
+  --surface-secondary: #181d26;
+  --surface-elevated: #1c222c;
+  --foreground: #e5e8ee;
+  --muted: #8b94a5;
+  --subtle: #6b7385;
+  --border: #232a35;
+  --border-strong: #313a47;
+  --primary: #e5e8ee;
+  --primary-foreground: #0b0e13;
+  --accent: #7ea2ff;
+  --accent-foreground: #0b0e13;
+  --accent-soft: #172241;
+  --focus: #7ea2ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-danger: var(--error);
+  --color-info: var(--info);
+
+  /* Radius scale: restrained. Inputs/buttons md, cards lg, dialogs xl. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 20px;
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+}
+
+/*
+ * Type scale (platform UI). Use these instead of ad-hoc text-[..] sizes.
+ * display 32/38 · h1 24/32 · h2 18/26 · h3 15/22 · h4 13/20 · body 14/22 · small 13/20 · caption 12/16 · label 13/18
+ */
+@utility text-display {
+  font-size: 2rem;
+  line-height: 2.375rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+@utility text-h1 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+@utility text-h2 {
+  font-size: 1.125rem;
+  line-height: 1.625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility text-h3 {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 600;
+}
+@utility text-h4 {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+}
+@utility text-body {
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+@utility text-small {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+@utility text-caption {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+@utility text-label {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+@utility text-overline {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes shell-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
