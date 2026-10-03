@@ -49,7 +49,7 @@ export default async function BrandingPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card title="Header logo" description="Top left of every website page, seller sign-in, onboarding and this console.">
-          <BrandImageForm slot="header_logo" current={header} accept={RASTER} hint="PNG or WebP, transparent background, about 64px tall (shown at 32px). Max 2 MB." />
+          <BrandImageForm slot="header_logo" current={header} accept={RASTER} hint="PNG or WebP with a transparent background, about 120px tall (shown up to 48px tall). Empty margins are trimmed automatically. Max 2 MB." />
         </Card>
         <Card title="Footer logo" description="On the dark footer. Empty = header logo.">
           <BrandImageForm slot="footer_logo" current={footer} dark accept={RASTER} hint="A white / light version reads best on dark. Max 2 MB." />
