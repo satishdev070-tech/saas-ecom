@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/layout";
 import { assetUrl } from "@/lib/storage/assets";
 import { StoreDetailsForm } from "@/features/dashboard-ui/forms";
+import { CloseStoreButton } from "@/features/stores/components/close-store";
 
 export const metadata: Metadata = { title: "Store details" };
 
@@ -28,6 +29,20 @@ export default async function StoreSettingsPage() {
       ) : (
         <p className="text-sm text-muted">You can view but not change store settings.</p>
       )}
+      {ctx.role === "owner" ? (
+        <section className="mt-10 rounded-lg border border-error/30 p-5" aria-labelledby="danger-zone">
+          <h2 id="danger-zone" className="text-h3 font-semibold">
+            Close this store
+          </h2>
+          <p className="mt-1 text-small text-muted">
+            For a store you no longer use. It goes offline and leaves your store switcher; all data is kept and support can reopen it.
+            {ctx.memberships.length > 1 ? " You'll be switched to your other store." : ""}
+          </p>
+          <div className="mt-4">
+            <CloseStoreButton storeName={ctx.tenantName} slug={ctx.tenantSlug} />
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

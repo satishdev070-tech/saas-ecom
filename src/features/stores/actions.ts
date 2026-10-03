@@ -7,6 +7,12 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mapDbError } from "@/lib/supabase/errors";
 import { revalidateStorefront } from "@/lib/cache/storefront";
 import { audit } from "@/lib/audit";
+import { z } from "zod";
+import { redirect } from "next/navigation";
+import { formToObject } from "@/lib/actions/form";
+import { parseInput } from "@/lib/validation/common";
+import { AppError } from "@/lib/errors";
+import { setActiveTenant } from "@/lib/tenant/active";
 
 /** Publish the active store: draft -> live. Only a draft changes; a live store is left as it is. */
 export async function publishStoreAction(): Promise<ActionResult> {
@@ -27,4 +33,29 @@ export async function publishStoreAction(): Promise<ActionResult> {
     }
     revalidatePath("/dashboard");
   });
+}
+
+const closeStoreSchema = z.object({ confirmSlug: z.string().trim().toLowerCase().min(1, "Type the store address to confirm").max(80) });
+
+/**
+ * Owner closes the active store (close_own_store: owner only, typed confirmation, no custom
+ * domain left). Nothing is deleted; platform support can reopen it. Then goes to another store.
+ */
+export async function closeStoreAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const result = await runAction("stores.close", async () => {
+    const { confirmSlug } = parseInput(closeStoreSchema, formToObject(fd));
+    const ctx = await requireTenant();
+    if (ctx.role !== "owner") throw new AppError("FORBIDDEN", { message: "Only the store owner can close this store." });
+    const { error } = await (await createSupabaseServerClient()).rpc("close_own_store", { p_tenant: ctx.tenantId, p_confirm_slug: confirmSlug });
+    if (error) {
+      if (error.hint === "CONFIRM_MISMATCH") throw new AppError("VALIDATION", { fieldErrors: { confirmSlug: [`Type ${ctx.tenantSlug} exactly to confirm.`] } });
+      if (error.hint === "HAS_CUSTOM_DOMAIN") throw new AppError("VALIDATION", { fieldErrors: { _form: ["This store still has a custom domain. Move it to another store or remove it in Settings → Domains first."] } });
+      throw mapDbError(error, { tenantId: ctx.tenantId });
+    }
+    revalidateStorefront(ctx.tenantId);
+    const next = ctx.memberships.find((m) => m.tenantId !== ctx.tenantId);
+    if (next) await setActiveTenant(next.tenantId);
+  });
+  if (result.ok) redirect("/dashboard?closed=1");
+  return result;
 }

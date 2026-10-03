@@ -6,9 +6,12 @@ import { runAction, type ActionResult } from "@/lib/actions/result";
 import { formToObject } from "@/lib/actions/form";
 import { parseInput } from "@/lib/validation/common";
 import { requireTenant } from "@/lib/tenant/membership";
+import { setActiveTenant } from "@/lib/tenant/active";
+import { redirect } from "next/navigation";
 import { rateLimit } from "@/lib/rate-limit";
 import { addDomainSchema, domainIdSchema } from "./rules";
-import { addCustomDomain, removeCustomDomain, setPrimaryDomain, verifyTenantDomain, type VerifyOutcome } from "./server/service";
+import { z } from "zod";
+import { addCustomDomain, moveCustomDomain, removeCustomDomain, setPrimaryDomain, verifyTenantDomain, type VerifyOutcome } from "./server/service";
 
 const PATH = "/dashboard/settings/domains";
 
@@ -56,4 +59,26 @@ export async function removeDomainAction(_prev: ActionResult | null, fd: FormDat
     revalidatePath(PATH);
     revalidateStorefront(ctx.tenantId);
   });
+}
+
+const moveDomainSchema = z.object({ domainId: z.uuid(), targetTenantId: z.uuid({ error: "Choose a store" }) });
+
+/** Moves a connected domain to another store the seller manages, then switches to that store. */
+export async function moveDomainAction(_prev: ActionResult<{ hostname: string; madePrimary: boolean }> | null, fd: FormData): Promise<ActionResult<{ hostname: string; madePrimary: boolean }>> {
+  let target: string | null = null;
+  const result = await runAction("domains.move", async () => {
+    const input = parseInput(moveDomainSchema, formToObject(fd));
+    const ctx = await requireTenant();
+    await rateLimit("domain-move", ctx.tenantId, 10, 3600);
+    const moved = await moveCustomDomain(ctx, input.domainId, input.targetTenantId);
+    revalidateStorefront(ctx.tenantId);
+    revalidateStorefront(input.targetTenantId);
+    target = input.targetTenantId;
+    return moved;
+  });
+  if (result.ok && target) {
+    await setActiveTenant(target);
+    redirect(`${PATH}?moved=${encodeURIComponent(result.data.hostname)}`);
+  }
+  return result;
 }

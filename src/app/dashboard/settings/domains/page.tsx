@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireTenantPermission, can } from "@/lib/tenant/membership";
+import { requireTenantPermission, can, membershipPermissions } from "@/lib/tenant/membership";
 import { storeOrigin } from "@/lib/platform/urls";
 import { Badge, Card, PageHeader } from "@/components/ui/layout";
 import { EmptyState } from "@/components/ui/states";
 import { domainSettings, getDomainAllowance, listTenantDomains, type DomainAllowance } from "@/features/domains/server/service";
 import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/observability/logger";
-import { AddDomainForm, RemoveDomainButton, SetPrimaryButton, VerifyDomainButton } from "@/features/domains/components/domain-controls";
+import { AddDomainForm, MoveDomainButton, RemoveDomainButton, SetPrimaryButton, VerifyDomainButton } from "@/features/domains/components/domain-controls";
 import { DnsInstructions, DomainStatusBadge, ProviderStatusBadge, SslStatusBadge, VercelDnsInstructions } from "@/features/domains/components/domain-display";
 import { parseStoredDnsRecords } from "@/features/domains/vercel-status";
 
@@ -31,9 +31,15 @@ async function loadDomains(tenantId: string) {
   return { domains, allowance, ...domainSettings() };
 }
 
-export default async function DomainsSettingsPage() {
+export default async function DomainsSettingsPage({ searchParams }: PageProps<"/dashboard/settings/domains">) {
+  const movedParam = (await searchParams).moved;
+  const moved = typeof movedParam === "string" && /^[a-z0-9.-]{3,253}$/.test(movedParam) ? movedParam : null;
   const ctx = await requireTenantPermission("store.read");
   const canManage = can(ctx, "domains.manage");
+  // Other stores this seller can move a domain to (domains.manage there too).
+  const moveTargets = ctx.memberships
+    .filter((m) => m.tenantId !== ctx.tenantId && membershipPermissions(m).has("domains.manage"))
+    .map((m) => ({ id: m.tenantId, name: m.tenantName, slug: m.tenantSlug }));
   let loaded: Awaited<ReturnType<typeof loadDomains>>;
   try {
     loaded = await loadDomains(ctx.tenantId);
@@ -73,6 +79,11 @@ export default async function DomainsSettingsPage() {
           </Link>
         }
       />
+      {moved ? (
+        <p role="status" className="rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
+          {moved} now shows {ctx.tenantName}. It may take up to two minutes to appear everywhere.
+        </p>
+      ) : null}
 
       {!canManage ? (
         <p role="note" className="rounded-md border border-border bg-background px-3 py-2 text-sm text-muted">
@@ -166,6 +177,7 @@ export default async function DomainsSettingsPage() {
                         <div className="flex flex-wrap items-start gap-2">
                           {d.status !== "verified" || !edgeLive ? <VerifyDomainButton domainId={d.id} /> : null}
                           {d.status === "verified" && !d.is_primary && edgeLive ? <SetPrimaryButton domainId={d.id} /> : null}
+                          <MoveDomainButton domainId={d.id} hostname={d.hostname} stores={moveTargets} />
                           <RemoveDomainButton domainId={d.id} hostname={d.hostname} />
                         </div>
                       ) : null}

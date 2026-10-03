@@ -34,6 +34,21 @@ _Last updated: 2026-10-03 (live theme previews, platform branding / GA4 / sign-i
 
 Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprocket, Cloudflare custom hostnames.
 
+## Move a domain between stores; owner closes a store (2026-10-03)
+
+- **Migration 2600** (`supabase/dev/apply-2600.sql`, two SECURITY DEFINER functions, no data
+  changed on apply).
+- **Settings → Domains → Move to another store**: a seller who has `domains.manage` on both
+  stores moves a connected custom domain (e.g. thepaliya.com) to their other store. Same hostname,
+  so it stays verified and live on Vercel: no DNS change, no downtime. `tenant_id` stays frozen
+  per row: the old row is retired (kept for history) and an identical row is created for the
+  target in one transaction; a verified domain becomes the target's primary; audited in both
+  stores; storefront + host directory caches are invalidated so the switch is immediate.
+- **Settings → Store details → Close this store** (owner only): typed confirmation (store
+  address), refused while a custom domain is attached; sets status `cancelled` (store offline,
+  hidden from the switcher); nothing is deleted and support can reopen it from Admin → Stores.
+- Tests: `tests/rls/move-domain-close-store.test.ts`.
+
 ## Fixes after go-live of 2500 (2026-10-03)
 
 - `apply-2500.sql` failed on production because migration 2000 (social suite) was never applied
