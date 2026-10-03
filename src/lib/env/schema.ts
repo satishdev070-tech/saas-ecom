@@ -21,7 +21,11 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(20),
   /** Root domain that hosts the platform, e.g. `paliya.store`. Stores live at `{slug}.{root}`. */
   NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: hostnameLike,
-  /** Full origin of the platform app for links in emails, e.g. https://paliya.store (defaults from root domain). */
+  /**
+   * Full origin (scheme + host, no path) of the platform app, e.g. https://paliya.store. Used for
+   * links in emails and OAuth callbacks (defaults from the root domain). Its host is also served
+   * as the platform, so it may differ from the root domain (e.g. https://saas-ecom-puce.vercel.app).
+   */
   NEXT_PUBLIC_PLATFORM_URL: z.url().optional(),
 });
 
@@ -35,6 +39,14 @@ export const serverEnvSchema = publicEnvSchema.extend({
    * when unset, the app trusts only the literal Host header.
    */
   EDGE_SHARED_SECRET: z.string().min(32).optional(),
+  /**
+   * Extra exact hostnames that serve the platform app (comma-separated, bare hostnames), e.g. a
+   * Vercel production alias. Read by the proxy through lib/platform/hosts; validated here.
+   */
+  PLATFORM_HOST_ALIASES: z
+    .string()
+    .optional()
+    .refine((v) => !v || v.split(",").every((h) => hostnameLike.safeParse(h).success), "must be comma-separated bare hostnames such as saas-ecom-puce.vercel.app"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   /**
    * 32+ random chars. Root secret for HMAC-signed cart/session tokens and for encrypting

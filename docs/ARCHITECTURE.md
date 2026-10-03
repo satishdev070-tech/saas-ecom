@@ -13,11 +13,15 @@ distinguished by **hostname**, backed by one Supabase project.
 
 | Surface | Where it is served | Who uses it |
 |---|---|---|
-| Platform (marketing, seller auth, **seller dashboard** `/dashboard`, **super admin** `/admin`) | `{root}` and `www.{root}` | Sellers, platform staff |
+| Platform (marketing, seller auth, **seller dashboard** `/dashboard`, **super admin** `/admin`) | `{root}`, `www.{root}` and exact platform aliases (`lib/platform/hosts.ts`) | Sellers, platform staff |
 | Storefront (one per tenant) | `{slug}.{root}` and verified custom domains (`www.brand.in`) | Shoppers |
 | API route handlers `/api/*` | every host (handlers read the verified host themselves) | Storefront JS, webhooks |
 
 `{root}` = `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` (e.g. `paliya.store`; `localhost` in dev).
+Platform aliases are exact hostnames only: the host of `NEXT_PUBLIC_PLATFORM_URL`, each entry of
+`PLATFORM_HOST_ALIASES`, and Vercel's `VERCEL_URL` / `VERCEL_BRANCH_URL` /
+`VERCEL_PROJECT_PRODUCTION_URL` (`*.vercel.app` only). Any other host, including other `*.vercel.app` names, is a storefront candidate and 404s
+unless it is a verified row in `domains`.
 
 ## 2. Request flow
 

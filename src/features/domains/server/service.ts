@@ -13,6 +13,7 @@ import { canAddAnotherDomain, checkCustomDomain, statusAfterFailedCheck, FAILED_
 import { checkDomainDns } from "../dns";
 import { cloudflareConfigFrom, createCustomHostname, deleteCustomHostname, getCustomHostname, type CloudflareConfig } from "../cloudflare";
 import { vercelConfig, type VercelConfig } from "@/lib/vercel/domains";
+import { platformHostAliases } from "@/lib/platform/hosts";
 import { ensureVercelDomain, removeFromVercel, type EdgeProvider } from "./vercel-edge";
 
 /**
@@ -111,7 +112,7 @@ export async function getDomainAllowance(tenantId: string, domains?: DomainRow[]
 export async function addCustomDomain(ctx: TenantContext, rawHostname: string): Promise<DomainRow> {
   assertPermission(ctx, "domains.manage");
   const settings = domainSettings();
-  const check = checkCustomDomain(rawHostname, settings.rootDomain, settings.cnameTarget);
+  const check = checkCustomDomain(rawHostname, settings.rootDomain, settings.cnameTarget, platformHostAliases());
   if (!check.ok) throw new AppError("VALIDATION", { fieldErrors: { hostname: [check.message] } });
 
   const allowance = await getDomainAllowance(ctx.tenantId);

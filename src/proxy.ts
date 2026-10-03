@@ -6,6 +6,7 @@ import { decideRoute, STORE_ROUTE_PREFIX, INTERNAL_HOST_HEADER, INTERNAL_REQUEST
 import { THEME_PREVIEW_COOKIE, THEME_PREVIEW_EXIT, THEME_PREVIEW_PARAM, THEME_PREVIEW_TTL_SECONDS, isPreviewKeyShape } from "@/features/theme/marketplace/live-preview";
 import { framingHeaders } from "@/lib/security/headers";
 import { platformOrigin } from "@/lib/platform/urls";
+import { platformHostAliases } from "@/lib/platform/hosts";
 import { EDGE_HOST_HEADER, EDGE_SIG_HEADER, EDGE_TS_HEADER, verifyEdgeHost } from "@/lib/tenant/edge-signature";
 
 /**
@@ -23,6 +24,19 @@ const NOT_FOUND_PATH = "/_unknown-host";
 const REQUEST_ID_PATTERN = /^[a-zA-Z0-9-]{8,64}$/;
 
 type PendingCookie = { name: string; value: string; options: CookieOptions };
+
+let cachedAliases: string[] | undefined;
+/** Exact extra platform hostnames (see lib/platform/hosts). Env is fixed per deployment, so computed once. */
+function platformAliases(platformUrl: string | undefined): string[] {
+  cachedAliases ??= platformHostAliases({
+    NEXT_PUBLIC_PLATFORM_URL: platformUrl,
+    PLATFORM_HOST_ALIASES: process.env.PLATFORM_HOST_ALIASES,
+    VERCEL_URL: process.env.VERCEL_URL,
+    VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  });
+  return cachedAliases;
+}
 
 async function effectiveHost(request: NextRequest): Promise<string | null> {
   const edgeHost = request.headers.get(EDGE_HOST_HEADER);
@@ -76,7 +90,7 @@ export async function proxy(request: NextRequest) {
   forwarded.set(REQUEST_ID_HEADER, requestId);
 
   // (3) Routing decision.
-  const decision = decideRoute(host, request.nextUrl.pathname, env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN);
+  const decision = decideRoute(host, request.nextUrl.pathname, env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN, platformAliases(env.NEXT_PUBLIC_PLATFORM_URL));
   const isStoreRoute = decision.action === "rewrite" && decision.pathname.startsWith(`${STORE_ROUTE_PREFIX}/`);
 
   // Marketplace Live Preview: only a key is passed along; whether the tenant may use it (demo

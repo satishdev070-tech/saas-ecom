@@ -25,8 +25,9 @@ Secrets are never exposed to the browser: only `NEXT_PUBLIC_*` values are.
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | yes | `https://<ref>.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Supabase publishable key (RLS protects data) |
-| `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` | yes | Bare root domain, e.g. `paliya.store`. Stores live at `{slug}.{root}` |
-| `NEXT_PUBLIC_PLATFORM_URL` | recommended | `https://paliya.store` (links in emails; defaults from the root domain) |
+| `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` | yes | **Hostname** (no scheme/port/path), e.g. `paliya.store`. Stores live at `{slug}.{root}`; `{root}` and `www.{root}` serve the platform |
+| `NEXT_PUBLIC_PLATFORM_URL` | recommended (required while on `*.vercel.app`) | **Full URL**, e.g. `https://paliya.store` or `https://saas-ecom-puce.vercel.app`. Links in emails/OAuth; its host is also served as the platform (defaults from the root domain) |
+| `PLATFORM_HOST_ALIASES` | no | Comma-separated **hostnames** that also serve the platform, exact match only (e.g. a second `*.vercel.app` alias). `VERCEL_URL`/`VERCEL_BRANCH_URL`/`VERCEL_PROJECT_PRODUCTION_URL` (`*.vercel.app` only) are trusted automatically |
 | `SUPABASE_SECRET_KEY` | yes | Supabase secret key (server only, bypasses RLS; uses limited by ADR-006) |
 | `APP_SECRET` | yes | 32+ random characters (`openssl rand -base64 48`). Signs cart/session tokens and encrypts stored credentials. **Never rotate casually**: stored credentials become unreadable |
 | `CRON_SECRET` | yes | 24+ random characters. Vercel sends it as `Authorization: Bearer …` to cron routes |
@@ -67,6 +68,30 @@ a **wildcard domain** on the Vercel project:
 The proxy (`src/proxy.ts`) reads the `Host` header, classifies it and rewrites store hosts to
 `/store/[host]`. A store subdomain resolves only through the `domains` table (`status = 'verified'`).
 
+### Before the real domain is attached (`*.vercel.app` only)
+
+Any host that is not the platform is treated as a possible store domain. So with only the Vercel
+URL (e.g. `saas-ecom-puce.vercel.app`) and a root domain such as `paliya.store`, `/` used to be
+rewritten to `/store/saas-ecom-puce.vercel.app`, the `domains` lookup found nothing, and the
+platform homepage showed "404 — Page not found". Tell the app which host is the platform:
+
+- `NEXT_PUBLIC_PLATFORM_URL=https://saas-ecom-puce.vercel.app` (full URL), and
+- `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` = the domain store subdomains will use (e.g. `paliya.store`).
+  It must not be the `vercel.app` name: Vercel does not issue wildcard subdomains under
+  `vercel.app`, so `{slug}.saas-ecom-puce.vercel.app` stores can't work.
+
+Only exact hostnames are trusted (no `*.vercel.app` wildcard). Vercel's own `VERCEL_URL`,
+`VERCEL_BRANCH_URL` and `VERCEL_PROJECT_PRODUCTION_URL` are trusted automatically, but only when
+they are `*.vercel.app` names, so the production alias works even before `NEXT_PUBLIC_PLATFORM_URL`
+is set. `VERCEL_PROJECT_PRODUCTION_URL` can be a seller's custom domain (it is the project's
+shortest production domain); in that case it is ignored. Still set `NEXT_PUBLIC_PLATFORM_URL`:
+auth emails and OAuth callbacks are built from it.
+Add the Vercel URL to Supabase Auth redirect URLs too (section 3) so sign-in works there.
+
+A failed `domains` lookup (bad `SUPABASE_SECRET_KEY`, network, missing migration) now returns a
+5xx and logs `tenant_directory.lookup_failed` with the PostgREST `code`/`message`, instead of
+showing the store as "not found".
+
 ## 3. Supabase production settings
 
 1. Run every file in `supabase/migrations/` in order (or paste the `supabase/dev/apply-*.sql`
@@ -86,18 +111,27 @@ The proxy (`src/proxy.ts`) reads the `Host` header, classifies it and rewrites s
 `vercel.json` registers the cron routes. Vercel calls each one with `GET` and
 `Authorization: Bearer $CRON_SECRET`, which `isAuthorizedCronRequest` checks (constant-time).
 
-| Route | Schedule | Does |
+| Route | Intended schedule | Does |
 |---|---|---|
 | `/api/cron/social-publish` | every 5 min | Publishes scheduled social posts |
-| `/api/cron/expire-orders` | every 5 min | Cancels unpaid orders whose stock hold expired |
+| `/api/cron/expire-orders` | every 5 min | Cancels unpaid orders whose stock hold expired (releases the reserved stock; nothing else does) |
 | `/api/cron/domains` | every 15 min | Re-checks custom domains (ownership, Vercel status, SSL) |
 | `/api/cron/gbp-reviews` | every 6 h | Refreshes cached Google reviews |
+| `/api/cron/notifications` | every 10 min | WhatsApp retries and abandoned-cart events |
 
-<!-- TODO(notifications): roles C/D add `/api/cron/notifications` (retries / abandoned carts).
-     When the route exists, add it to vercel.json, e.g.
-     { "path": "/api/cron/notifications", "schedule": "*/10 * * * *" } -->
+Hobby plans reject anything more frequent than daily (the deploy fails with
+`*/5 * * * *`). `vercel.json` currently runs **every route once a day** (`0 0 * * *`) so the
+project deploys on Hobby. That works, but with real consequences: unpaid orders hold stock for up
+to 24 h, scheduled social posts publish up to a day late, notification retries and domain/SSL
+re-checks run once a day. Options:
 
-Hobby plans reject anything more frequent than daily, so use Pro. Test a route by hand:
+1. **Vercel Pro**: restore the intended schedules above in `vercel.json`.
+2. **Stay on Hobby + an external scheduler** (GitHub Actions `schedule`, cron-job.org, Supabase
+   `pg_cron` + `pg_net`, …) calling the routes on the intended schedule with
+   `Authorization: Bearer $CRON_SECRET`. The routes are idempotent, so the daily Vercel run can stay.
+3. Accept daily runs (fine for a demo with no live orders).
+
+Test a route by hand:
 `curl -H "Authorization: Bearer $CRON_SECRET" https://paliya.store/api/cron/domains`.
 
 ## 5. Custom domains for sellers (Dashboard → Settings → Domains)

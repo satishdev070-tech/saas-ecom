@@ -57,12 +57,18 @@ export type HostClassification =
   | { kind: "reserved"; host: string }
   | { kind: "invalid" };
 
-export function classifyHost(rawHost: string | null | undefined, rootDomain: string): HostClassification {
+/**
+ * `platformAliases` are extra hostnames that serve the platform app (e.g. the Vercel production
+ * alias before the real root domain is attached). Exact matches only — never a suffix or wildcard,
+ * so an alias can't swallow store hosts. Build the list with `platformHostAliases()`.
+ */
+export function classifyHost(rawHost: string | null | undefined, rootDomain: string, platformAliases: readonly string[] = []): HostClassification {
   const host = normalizeHost(rawHost);
   const root = normalizeHost(rootDomain);
   if (!host || !root) return { kind: "invalid" };
 
   if (host === root || host === `www.${root}`) return { kind: "platform", host };
+  if (platformAliases.includes(host)) return { kind: "platform", host };
 
   const suffix = `.${root}`;
   if (host.endsWith(suffix)) {

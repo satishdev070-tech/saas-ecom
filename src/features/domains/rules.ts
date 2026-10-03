@@ -25,7 +25,7 @@ export type CustomDomainCheck = { ok: true; hostname: string } | { ok: false; me
  * The host must classify as "custom-domain": the platform root, `*.root` store
  * subdomains, reserved names, IP literals and single labels are all refused.
  */
-export function checkCustomDomain(raw: string, rootDomain: string, cnameTarget?: string | null): CustomDomainCheck {
+export function checkCustomDomain(raw: string, rootDomain: string, cnameTarget?: string | null, platformAliases: readonly string[] = []): CustomDomainCheck {
   let value = raw.trim().toLowerCase();
   value = value.replace(/^[a-z][a-z0-9+.-]*:\/\//, ""); // scheme
   value = value.replace(/\/.*$/, ""); // path / trailing slash
@@ -38,7 +38,7 @@ export function checkCustomDomain(raw: string, rootDomain: string, cnameTarget?:
   const host = normalizeHost(value);
   if (!host) return { ok: false, message: "That doesn't look like a valid domain name" };
 
-  const kind = classifyHost(host, rootDomain).kind;
+  const kind = classifyHost(host, rootDomain, platformAliases).kind;
   if (kind === "platform" || kind === "store-subdomain" || kind === "reserved") {
     return { ok: false, message: "Platform addresses can't be added as a custom domain" };
   }
