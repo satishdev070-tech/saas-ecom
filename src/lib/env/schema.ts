@@ -15,12 +15,25 @@ const hostnameLike = z
     "must be a bare hostname such as paliya.store or localhost (no scheme, port or path)",
   );
 
+/**
+ * The platform root domain. Accepts the usual paste mistakes (`https://www.example.in/`) and
+ * reduces them to the bare apex: scheme, path/trailing slash and a leading `www.` are dropped
+ * (`www.{root}` is always the platform, never the root itself). Ports and anything else that is
+ * not a hostname are still rejected.
+ */
+const rootDomain = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .transform((v) => v.replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/\/.*$/, "").replace(/\.$/, "").replace(/^www\./, ""))
+  .pipe(hostnameLike);
+
 export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   /** Supabase publishable (formerly "anon") key. Safe for the browser; RLS protects data. */
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(20),
   /** Root domain that hosts the platform, e.g. `paliya.store`. Stores live at `{slug}.{root}`. */
-  NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: hostnameLike,
+  NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: rootDomain,
   /**
    * Full origin (scheme + host, no path) of the platform app, e.g. https://paliya.store. Used for
    * links in emails and OAuth callbacks (defaults from the root domain). Its host is also served

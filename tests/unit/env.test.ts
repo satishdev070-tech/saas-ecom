@@ -30,7 +30,6 @@ describe("env validation", () => {
   });
 
   it("rejects a root domain with a scheme or port", () => {
-    expect(() => parseEnv(serverEnvSchema, { ...valid, NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "https://paliya.store" })).toThrow();
     expect(() => parseEnv(serverEnvSchema, { ...valid, NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "paliya.store:3000" })).toThrow();
   });
 
@@ -39,5 +38,15 @@ describe("env validation", () => {
     expect(() => parseEnv(serverEnvSchema, { ...valid, PLATFORM_HOST_ALIASES: "https://saas-ecom-puce.vercel.app" })).toThrow(EnvValidationError);
     expect(() => parseEnv(serverEnvSchema, { ...valid, PLATFORM_HOST_ALIASES: "*.vercel.app" })).toThrow(EnvValidationError);
   });
-});
 
+  it("reduces a pasted URL in NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN to the bare root domain", () => {
+    const root = (v: string) => parseEnv(serverEnvSchema, { ...valid, NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: v }).NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN;
+    expect(root("https://paliya.store")).toBe("paliya.store");
+    expect(root("https://www.BuildBrighten.in/")).toBe("buildbrighten.in");
+    expect(root(" www.buildbrighten.in ")).toBe("buildbrighten.in");
+    expect(root("buildbrighten.in.")).toBe("buildbrighten.in");
+    expect(root("localhost")).toBe("localhost");
+    expect(() => root("https://")).toThrow(EnvValidationError);
+    expect(() => root("https://buildbrighten.in:8443/")).toThrow(EnvValidationError);
+  });
+});
