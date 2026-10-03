@@ -1,6 +1,6 @@
 # Implementation Status
 
-_Last updated: 2026-10-01 (marketplace themes can now be applied and published directly to a store)_
+_Last updated: 2026-10-03 (platform host aliases: the Vercel URL serves the platform, not a store)_
 
 ## Phase overview
 
@@ -61,6 +61,14 @@ Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprock
 - **Platform:** Server Action / proxy body limit 25 MB (uploads over 1 MB failed before).
 - **Data:** seed fixed (GoTrue token columns, idempotent inserts); `scripts/dev/demo-media/run.mts` generates original demo imagery and publishes the demo theme.
 - **Tests:** `zeroFillDays`; admin stats RPC; shopper↔shopper and shopper→seller/platform isolation.
+
+## Platform host aliases / Vercel 404 fix (2026-10-03)
+
+- Bug: on `saas-ecom-puce.vercel.app`, `/` returned the 404 page. `classifyHost` only knew `{root}`/`www.{root}`, so the Vercel host was a `custom-domain`, the proxy rewrote it to `/store/[host]`, the `domains` lookup found no row and the layout called `notFound()`.
+- `src/lib/platform/hosts.ts` `platformHostAliases()`: exact extra platform hosts from `NEXT_PUBLIC_PLATFORM_URL`'s host, `PLATFORM_HOST_ALIASES` (validated in `env/schema.ts`), and `VERCEL_URL`/`VERCEL_BRANCH_URL` (`*.vercel.app` only). `classifyHost`/`decideRoute`/`checkCustomDomain` take the list; aliases can't be added as custom domains.
+- `tenant/directory.ts`: a failed lookup throws `TenantDirectoryError` (5xx, logged with PostgREST code) instead of looking like an unknown host.
+- `.env.example` uses placeholders and lists `APP_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_PLATFORM_URL`, `PLATFORM_HOST_ALIASES`. `docs/DEPLOY_VERCEL.md` covers `*.vercel.app` setup and the Hobby cron trade-off (crons currently daily).
+- Tests: `tests/unit/platform-hosts.test.ts`, `proxy-platform-host.test.ts` (real proxy), `tenant-directory.test.ts`, routing/env additions.
 
 ## Custom domains on Vercel + go-live guide (2026-10-03)
 

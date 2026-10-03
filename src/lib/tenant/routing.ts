@@ -32,8 +32,8 @@ function hasPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`);
 }
 
-export function decideRoute(host: string | null, pathname: string, rootDomain: string): RouteDecision {
-  const classification = classifyHost(host, rootDomain);
+export function decideRoute(host: string | null, pathname: string, rootDomain: string, platformAliases: readonly string[] = []): RouteDecision {
+  const classification = classifyHost(host, rootDomain, platformAliases);
 
   switch (classification.kind) {
     case "invalid":

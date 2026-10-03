@@ -33,4 +33,11 @@ describe("env validation", () => {
     expect(() => parseEnv(serverEnvSchema, { ...valid, NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "https://paliya.store" })).toThrow();
     expect(() => parseEnv(serverEnvSchema, { ...valid, NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "paliya.store:3000" })).toThrow();
   });
+
+  it("validates PLATFORM_HOST_ALIASES as comma-separated bare hostnames", () => {
+    expect(parseEnv(serverEnvSchema, { ...valid, PLATFORM_HOST_ALIASES: "saas-ecom-puce.vercel.app, app.example.com" }).PLATFORM_HOST_ALIASES).toBeDefined();
+    expect(() => parseEnv(serverEnvSchema, { ...valid, PLATFORM_HOST_ALIASES: "https://saas-ecom-puce.vercel.app" })).toThrow(EnvValidationError);
+    expect(() => parseEnv(serverEnvSchema, { ...valid, PLATFORM_HOST_ALIASES: "*.vercel.app" })).toThrow(EnvValidationError);
+  });
 });
+

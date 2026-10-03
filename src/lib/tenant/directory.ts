@@ -12,8 +12,19 @@ import type { ResolvedTenant, TenantDirectory, TenantStatus } from "./context";
  * Memoised per request and cached across requests (lib/cache/storefront, invalidated on domain,
  * status and store changes). Misses and errors are NOT cached: they throw out of the cached
  * function, so a newly connected domain works on its very next request.
+ *
+ * A missing row is a 404 (`null`). A failed query (bad key, network, schema drift) is NOT: it
+ * throws `TenantDirectoryError` so the request fails as a 5xx through the error boundary and the
+ * cause is logged, instead of every store silently rendering "Page not found".
  */
 class HostNotFound extends Error {}
+
+export class TenantDirectoryError extends Error {
+  constructor(public readonly host: string) {
+    super("Tenant directory lookup failed");
+    this.name = "TenantDirectoryError";
+  }
+}
 
 const lookup = cachedStorefront(
   "tenant-directory",
@@ -26,18 +37,23 @@ const lookup = cachedStorefront(
       .eq("status", "verified")
       .maybeSingle();
     if (error) {
-      logger.error("tenant_directory.lookup_failed", { host, error: error.message });
-      throw new HostNotFound();
+      // PostgREST error fields only (never the key or request headers).
+      logger.error("tenant_directory.lookup_failed", { host, code: error.code, error: error.message, details: error.details, hint: error.hint });
+      throw new TenantDirectoryError(host);
     }
     if (!data) throw new HostNotFound();
 
-    const { data: primary } = await admin
+    const { data: primary, error: primaryError } = await admin
       .from("domains")
       .select("hostname")
       .eq("tenant_id", data.tenant_id)
       .eq("is_primary", true)
       .eq("status", "verified")
       .maybeSingle();
+    if (primaryError) {
+      logger.error("tenant_directory.primary_lookup_failed", { host, code: primaryError.code, error: primaryError.message });
+      throw new TenantDirectoryError(host);
+    }
 
     const tenant = data.tenants;
     const store = Array.isArray(tenant.stores) ? tenant.stores[0] : tenant.stores;
