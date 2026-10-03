@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { platformIconMetadata } from "@/features/platform/server/public-config";
 import Link from "next/link";
 import { Bell, ChevronsUpDown, ExternalLink, LogOut, Store } from "lucide-react";
 import { requireTenant } from "@/lib/tenant/membership";
@@ -12,7 +13,9 @@ import { getDashboardAlerts } from "@/features/dashboard-ui/alerts";
 import { storeOrigin, storeSubdomain } from "@/lib/platform/urls";
 import { roleLabel } from "@/lib/permissions/labels";
 
-export const metadata: Metadata = { title: { default: "Dashboard", template: "%s · Dashboard" }, robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: { default: "Dashboard", template: "%s · Dashboard" }, robots: { index: false, follow: false }, ...(await platformIconMetadata()) };
+}
 
 function Monogram({ name, className = "size-7" }: { name: string; className?: string }) {
   return (

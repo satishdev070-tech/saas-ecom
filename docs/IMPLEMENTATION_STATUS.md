@@ -34,6 +34,22 @@ _Last updated: 2026-10-03 (live theme previews, platform branding / GA4 / sign-i
 
 Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprocket, Cloudflare custom hostnames.
 
+## Fixes after go-live of 2500 (2026-10-03)
+
+- `apply-2500.sql` failed on production because migration 2000 (social suite) was never applied
+  there (`platform_app_credentials` missing), which rolled back the whole script, so the branding
+  bucket didn't exist and logo uploads were refused. 2500 now creates `platform_app_credentials`
+  if missing (same definition as 2000) and is safe to re-run. Tested on a database without it.
+- Branding: social share image slot (1200×630, served by `/og` for every marketing page's
+  og:image / X card); per-slot size checks; preview of the chosen file before upload; a live
+  preview panel (browser tab, header with logo on the left, footer, link-share card); a setup
+  warning when the bucket is missing, plus actionable upload errors. The uploaded favicon and
+  header logo now also brand the admin console (top left) and the seller dashboard tab.
+- Custom domains: `www.brand.com` and `brand.com` now serve the same store when either one is a
+  verified custom domain (canonical URLs stay on the registered one; never for platform
+  subdomains). A domain that points at the platform but isn't verified yet shows a "Connecting
+  domain" page with next steps instead of a bare 404.
+
 ## Live theme previews, platform console options, checkout options (2026-10-03)
 
 - **Real theme previews.** Marketing hero, category cards, theme cards and the theme detail page

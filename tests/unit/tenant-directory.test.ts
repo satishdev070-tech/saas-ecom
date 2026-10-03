@@ -12,6 +12,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 vi.mock("@/lib/observability/logger", () => ({ logger: { error: logError, warn: vi.fn(), info: vi.fn(), debug: vi.fn() } }));
 vi.mock("react", () => ({ cache: <T,>(fn: T) => fn }));
+vi.mock("@/lib/env/public", () => ({ publicEnv: () => ({ NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "paliya.store" }) }));
 
 beforeEach(() => {
   vi.resetModules();
@@ -23,7 +24,7 @@ const load = () => import("@/lib/tenant/directory");
 
 describe("tenantDirectory.findByHost", () => {
   it("returns null for a hostname with no verified domain row (genuine not found)", async () => {
-    results.push({ data: null, error: null });
+    results.push({ data: null, error: null }, { data: null, error: null }); // host, then its www partner
     const { tenantDirectory } = await load();
     await expect(tenantDirectory.findByHost("unknown.example.com")).resolves.toBeNull();
     expect(logError).not.toHaveBeenCalled();
@@ -48,5 +49,33 @@ describe("tenantDirectory.findByHost", () => {
     results.push({ data: null, error: { code: "08006", message: "connection failure", details: null, hint: null } });
     const { tenantDirectory, TenantDirectoryError } = await load();
     await expect(tenantDirectory.findByHost("acme.paliya.store")).rejects.toBeInstanceOf(TenantDirectoryError);
+  });
+});
+
+describe("www / apex partner of a custom domain", () => {
+  const paliya = (hostname: string, type: string) => ({ data: { hostname, type, tenant_id: "t1", tenants: { id: "t1", slug: "the-paliya", status: "active", stores: [{ name: "The Paliya" }] } }, error: null });
+
+  it("serves www.brand.com from the verified brand.com (canonical stays on the primary)", async () => {
+    results.push({ data: null, error: null }, paliya("thepaliya.com", "custom"), { data: { hostname: "thepaliya.com" }, error: null });
+    const { tenantDirectory } = await load();
+    await expect(tenantDirectory.findByHost("www.thepaliya.com")).resolves.toMatchObject({ tenantId: "t1", host: "www.thepaliya.com", primaryHost: "thepaliya.com" });
+  });
+
+  it("serves brand.com from the verified www.brand.com", async () => {
+    results.push({ data: null, error: null }, paliya("www.thepaliya.com", "custom"), { data: null, error: null });
+    const { tenantDirectory } = await load();
+    await expect(tenantDirectory.findByHost("thepaliya.com")).resolves.toMatchObject({ tenantId: "t1", host: "thepaliya.com", primaryHost: "www.thepaliya.com" });
+  });
+
+  it("never borrows a platform subdomain or a non-custom row", async () => {
+    const { companionCustomHost } = await load();
+    expect(companionCustomHost("acme.paliya.store", "paliya.store")).toBeNull();
+    expect(companionCustomHost("paliya.store", "paliya.store")).toBeNull();
+    expect(companionCustomHost("www.com", "paliya.store")).toBeNull();
+    expect(companionCustomHost("thepaliya.com", "paliya.store")).toBe("www.thepaliya.com");
+    expect(companionCustomHost("www.x", "paliya.store")).toBeNull();
+    results.push({ data: null, error: null }, paliya("thepaliya.com", "platform_subdomain"), { data: null, error: null });
+    const { tenantDirectory } = await load();
+    await expect(tenantDirectory.findByHost("www.thepaliya.com")).resolves.toBeNull();
   });
 });

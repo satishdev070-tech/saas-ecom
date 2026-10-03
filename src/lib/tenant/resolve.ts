@@ -15,13 +15,8 @@ export const getRequestHost = cache(async (): Promise<string | null> => {
   return normalizeHost(h.get(INTERNAL_HOST_HEADER));
 });
 
-/**
- * Resolve the storefront tenant for the current request. `routeHost` is the `[host]`
- * segment from the rewritten URL; it must match the proxy-verified host, otherwise the
- * request did not come through the proxy rewrite and is rejected.
- * Memoised per request.
- */
-export const resolveStorefrontTenant = cache(async (routeHost: string): Promise<ResolvedTenant | null> => {
+/** The proxy-verified host when it matches the `[host]` route segment, else null. */
+export async function verifiedStorefrontHost(routeHost: string): Promise<string | null> {
   const requestHost = await getRequestHost();
   let decoded: string;
   try {
@@ -30,6 +25,16 @@ export const resolveStorefrontTenant = cache(async (routeHost: string): Promise<
     return null;
   }
   const normalizedRoute = normalizeHost(decoded);
-  if (!requestHost || !normalizedRoute || requestHost !== normalizedRoute) return null;
-  return tenantDirectory.findByHost(requestHost);
+  return requestHost && normalizedRoute && requestHost === normalizedRoute ? requestHost : null;
+}
+
+/**
+ * Resolve the storefront tenant for the current request. `routeHost` is the `[host]`
+ * segment from the rewritten URL; it must match the proxy-verified host, otherwise the
+ * request did not come through the proxy rewrite and is rejected.
+ * Memoised per request.
+ */
+export const resolveStorefrontTenant = cache(async (routeHost: string): Promise<ResolvedTenant | null> => {
+  const requestHost = await verifiedStorefrontHost(routeHost);
+  return requestHost ? tenantDirectory.findByHost(requestHost) : null;
 });

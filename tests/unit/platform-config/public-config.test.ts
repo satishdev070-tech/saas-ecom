@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PUBLIC_CONFIG, brandImageUrl, isIco, parseBrandImage, parseGa4Id, parsePublicConfig } from "@/features/platform/public-config";
+import { DEFAULT_PUBLIC_CONFIG, brandImageUrl, checkBrandImageSize, isIco, maxBytesFor, parseBrandImage, parseGa4Id, parsePublicConfig } from "@/features/platform/public-config";
 import { parseSettingValue } from "@/features/platform/settings-registry";
 import { parseCheckoutOptions, checkoutOptionsSchema, toCheckoutSettingsJson } from "@/features/checkout/options";
 import { mapNominatimAddress, matchIndianState, nominatimReverseUrl, parseCoordinates } from "@/features/geo/reverse";
@@ -42,6 +42,19 @@ describe("public platform config", () => {
     expect(parseSettingValue("public.analytics.ga4_id", "")).toEqual({ ok: true, value: null });
     expect(parseSettingValue("public.analytics.ga4_id", "<script>").ok).toBe(false);
     expect(parseSettingValue("public.auth.google_sellers", undefined)).toEqual({ ok: true, value: false });
+  });
+
+  it("reads the social share image and checks sizes per slot", () => {
+    const og = "branding/og_image/0b9e7c2a-3f7e-4b55-9f43-2b0c8d1a7e11.jpg";
+    expect(parsePublicConfig([{ key: "public.brand.og_image", value: { path: og, width: 1200, height: 630 } }]).ogImage).toEqual({ path: og, width: 1200, height: 630 });
+    expect(checkBrandImageSize("og_image", 1200, 630)).toBeNull();
+    expect(checkBrandImageSize("og_image", 1080, 1080)).toMatch(/1200×630/);
+    expect(checkBrandImageSize("og_image", 400, 210)).toMatch(/600px/);
+    expect(checkBrandImageSize("favicon", 512, 512)).toBeNull();
+    expect(checkBrandImageSize("favicon", 512, 256)).toMatch(/square/);
+    expect(checkBrandImageSize("header_logo", 320, 64)).toBeNull();
+    expect(checkBrandImageSize("header_logo", 320, 12)).toMatch(/24px/);
+    expect(maxBytesFor("og_image")).toBeLessThan(4.5 * 1024 * 1024);
   });
 
   it("recognises .ico favicons by their header", () => {
