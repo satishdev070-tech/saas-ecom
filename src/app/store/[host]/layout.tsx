@@ -13,6 +13,8 @@ import { Suspense } from "react";
 import { getTrackingConfig } from "@/features/tracking/server/config";
 import { TrackingTags } from "@/features/tracking/components/tracking-tags";
 import { StoreUnavailable } from "./store-unavailable";
+import { ComingSoon } from "./coming-soon";
+import { isHiddenDraft } from "@/features/stores/launch";
 import { PreviewEscapeBridge } from "@/features/storefront/components/preview-escape";
 import { RouteProgress } from "@/features/storefront/components/route-progress";
 import "@/features/theme/storefront.css";
@@ -26,6 +28,7 @@ export async function generateMetadata({ params }: LayoutProps<"/store/[host]">)
   const { host } = await params;
   const tenant = await resolveStorefrontTenant(host);
   if (!tenant || storefrontAvailability(tenant.status) !== "open") return { robots: { index: false, follow: false } };
+  if (await isHiddenDraft(tenant.tenantId)) return { title: { absolute: `${tenant.name} · Coming soon` }, robots: { index: false, follow: false } };
   const { sf } = await getRenderContext(host);
   const icon = assetUrl(sf.store.faviconPath);
   const ogImage = assetUrl(sf.store.seo.ogImagePath ?? null);
@@ -57,6 +60,9 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
     case "open":
       break;
   }
+  // Draft stores (created by onboarding, not yet published) stay private; the owner's signed
+  // preview cookie lets them see it. Fails open to "live" (features/stores/launch.ts).
+  if (await isHiddenDraft(tenant.tenantId)) return <ComingSoon storeName={tenant.name} />;
   const ctx = await getRenderContext(host);
   const tracking = ctx.sf.preview || ctx.sf.themePreview ? null : await getTrackingConfig(tenant.tenantId);
   return (

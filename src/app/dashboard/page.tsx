@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireTenant } from "@/lib/tenant/membership";
+import { can, requireTenant } from "@/lib/tenant/membership";
 import { formatMoney } from "@/lib/money";
 import { storeOrigin, storeSubdomain } from "@/lib/platform/urls";
 import { Card, PageHeader } from "@/components/ui/layout";
@@ -8,6 +8,8 @@ import { getDashboardHome, type HomeKpis, type SetupStep } from "@/features/anal
 import { RevenueChart } from "@/features/analytics/components/revenue-chart";
 import { StatusBadge } from "@/features/orders-admin/components/status-badge";
 import { orderNumberLabel } from "@/features/orders-admin/format";
+import { getLaunchStatusForMember } from "@/features/stores/launch";
+import { PreviewStoreButton, PublishStoreButton } from "@/features/stores/components/launch-controls";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -82,7 +84,7 @@ function SetupChecklist({ steps }: { steps: SetupStep[] }) {
 
 export default async function DashboardHome() {
   const ctx = await requireTenant();
-  const home = await getDashboardHome(ctx);
+  const [home, launch] = await Promise.all([getDashboardHome(ctx), getLaunchStatusForMember(ctx.tenantId)]);
   const storeUrl = storeOrigin(storeSubdomain(ctx.tenantSlug));
   const firstName = ctx.user.displayName?.split(" ")[0];
 
@@ -97,6 +99,15 @@ export default async function DashboardHome() {
           </a>
         }
       />
+
+      {launch === "draft" ? (
+        <Card title="Your store is a private draft" description="Visitors see a ‘coming soon’ page. Preview it, then publish when you're ready to take orders.">
+          <div className="flex flex-wrap items-start gap-3">
+            {can(ctx, "theme.edit") ? <PreviewStoreButton /> : null}
+            {can(ctx, "settings.write") ? <PublishStoreButton /> : <p className="text-sm text-muted">Ask the store owner or an admin to publish the store.</p>}
+          </div>
+        </Card>
+      ) : null}
 
       <SetupChecklist steps={home.setup} />
 

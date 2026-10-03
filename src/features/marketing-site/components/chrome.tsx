@@ -1,71 +1,62 @@
 import Link from "next/link";
-import { PLATFORM_NAME } from "@/config/platform";
-import { FOOTER_GROUPS, LOGIN_HREF, NAV_LINKS, SECTION_IDS, SIGNUP_HREF } from "../content";
+import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/config/platform";
+import { CTA_CREATE, FOOTER_GROUPS, LOGIN_HREF, NAV_LINKS, SECTION_IDS, SIGNUP_HREF } from "../content";
 import { analyticsAttributes } from "../analytics";
-
-export const ctaPrimary = "inline-flex h-11 items-center justify-center rounded-full bg-foreground px-6 text-sm font-semibold text-background transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-export const ctaSecondary = "inline-flex h-11 items-center justify-center rounded-full border border-border bg-surface px-6 text-sm font-semibold transition hover:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+import { BrandLogo } from "./brand-logo";
+import { MobileNav } from "./mobile-nav";
+import { ButtonLink, Container } from "./ui";
 
 export function MarketingHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur">
-      <a href={`#${SECTION_IDS.main}`} className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:rounded focus:bg-surface focus:px-3 focus:py-2">
+    <header className="sticky top-0 z-30 border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+      <a href={`#${SECTION_IDS.main}`} className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:shadow-brand-card">
         Skip to content
       </a>
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="font-display text-xl tracking-tight">
-          {PLATFORM_NAME}
-        </Link>
-        <nav aria-label="Main" className="hidden md:block">
-          <ul className="flex gap-7 text-sm">
+      <Container className="flex h-16 items-center justify-between gap-6">
+        <BrandLogo />
+        <nav aria-label="Main" className="hidden lg:block">
+          <ul className="flex items-center gap-1 text-[0.95rem]">
             {NAV_LINKS.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="text-muted hover:text-foreground" {...analyticsAttributes("nav_click", l.label, "header")}>
+                <Link href={l.href} className="rounded-full px-4 py-2 font-medium text-brand-ink/80 hover:bg-brand-canvas hover:text-brand-ink" {...analyticsAttributes("nav_click", l.label, "header")}>
                   {l.label}
                 </Link>
               </li>
             ))}
           </ul>
         </nav>
-        <div className="flex items-center gap-3">
-          <Link href={LOGIN_HREF} className="hidden text-sm font-medium sm:inline">
-            Log in
+        <div className="flex items-center gap-2">
+          <Link href={LOGIN_HREF} className="hidden rounded-full px-4 py-2 text-[0.95rem] font-semibold text-brand-ink hover:bg-brand-canvas sm:inline-flex" {...analyticsAttributes("nav_click", "login", "header")}>
+            Login
           </Link>
-          <Link href={SIGNUP_HREF} className={`${ctaPrimary} h-9 px-4`} {...analyticsAttributes("cta_click", "start", "header")}>
-            Start free
-          </Link>
+          <ButtonLink href={SIGNUP_HREF} size="sm" className="hidden h-10 sm:inline-flex" track={{ id: "create_store", location: "header" }}>
+            {CTA_CREATE}
+          </ButtonLink>
+          <MobileNav links={NAV_LINKS} loginHref={LOGIN_HREF} signupHref={SIGNUP_HREF} ctaLabel={CTA_CREATE} />
         </div>
-      </div>
-      <nav aria-label="Main (mobile)" className="border-t border-border/60 md:hidden">
-        <ul className="mx-auto flex max-w-6xl justify-around px-4 py-2 text-sm">
-          {NAV_LINKS.map((l) => (
-            <li key={l.href}>
-              <Link href={l.href} className="text-muted hover:text-foreground">
-                {l.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      </Container>
     </header>
   );
 }
 
 export function MarketingFooter() {
   return (
-    <footer className="border-t border-border bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+    <footer className="bg-brand-ink text-white">
+      <Container className="grid gap-10 py-14 md:grid-cols-[1.5fr_repeat(3,1fr)]">
         <div>
-          <p className="font-display text-2xl">{PLATFORM_NAME}</p>
-          <p className="mt-3 max-w-xs text-sm text-muted">E-commerce built for Indian fashion labels — from first kurta to festive rush.</p>
+          <BrandLogo tone="light" />
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/70">{PLATFORM_TAGLINE}. Create your store, add your products and start selling.</p>
+          <ButtonLink href={SIGNUP_HREF} variant="light" size="sm" className="mt-6" track={{ id: "create_store", location: "footer" }}>
+            {CTA_CREATE}
+          </ButtonLink>
         </div>
         {FOOTER_GROUPS.map((g) => (
           <nav key={g.title} aria-label={g.title}>
             <p className="text-sm font-semibold">{g.title}</p>
-            <ul className="mt-3 space-y-2 text-sm text-muted">
+            <ul className="mt-4 space-y-2.5 text-sm text-white/70">
               {g.links.map((l) => (
                 <li key={l.href + l.label}>
-                  <Link href={l.href} className="hover:text-foreground">
+                  <Link href={l.href} className="rounded hover:text-white focus-visible:outline-2 focus-visible:outline-brand-accent">
                     {l.label}
                   </Link>
                 </li>
@@ -73,10 +64,15 @@ export function MarketingFooter() {
             </ul>
           </nav>
         ))}
+      </Container>
+      <div className="border-t border-white/10">
+        <Container className="flex flex-wrap items-center justify-between gap-3 py-6 text-xs text-white/60">
+          <p>
+            © {new Date().getFullYear()} {PLATFORM_NAME}
+          </p>
+          <p>Made in India</p>
+        </Container>
       </div>
-      <p className="border-t border-border py-6 text-center text-xs text-muted">
-        © {new Date().getFullYear()} {PLATFORM_NAME}. Made in India.
-      </p>
     </footer>
   );
 }

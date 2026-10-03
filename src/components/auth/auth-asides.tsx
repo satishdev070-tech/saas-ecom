@@ -1,5 +1,8 @@
 import { Boxes, Globe2, LineChart, LockKeyhole, Palette, ScrollText, ShieldCheck, Timer } from "lucide-react";
 import { PLATFORM_NAME } from "@/config/platform";
+import { BrandLogo } from "@/features/marketing-site/components/brand-logo";
+import { ThemeMockup } from "@/features/theme/marketplace/mockup";
+import { MARKETPLACE_THEMES } from "@/features/theme/marketplace/catalog";
 
 function Wordmark({ sub }: { sub: string }) {
   return (
@@ -11,48 +14,42 @@ function Wordmark({ sub }: { sub: string }) {
 }
 
 const MERCHANT_POINTS = [
-  { icon: Palette, title: "A storefront that looks like your label", body: "Editorial themes, your fonts and colours, live preview before you publish." },
-  { icon: Boxes, title: "Built for fashion catalogues", body: "Sizes and colours as variants, size charts, stock per size, bulk CSV import." },
-  { icon: LineChart, title: "Run it from one place", body: "Orders, COD and online payments, returns, customers and analytics." },
-  { icon: Globe2, title: "Your own domain", body: "Start on a free store address, connect www.yourbrand.in when you're ready." },
+  { icon: Palette, title: "Themes for your kind of business", body: "Pick a design, change colours and sections, and preview before you publish." },
+  { icon: Boxes, title: "Products, orders and stock", body: "Variants, inventory, orders, returns and GST invoices in one dashboard." },
+  { icon: LineChart, title: "Payments and shipping", body: "Your own Razorpay, Cashfree or PayU account, cash on delivery, and shipping rules." },
+  { icon: Globe2, title: "Your own web address", body: "A free store address from day one; connect your own domain on eligible plans." },
 ];
 
-/** Left panel for merchant sign-in / sign-up. Value statements only, no invented numbers. */
+const ASIDE_THEME = MARKETPLACE_THEMES.find((t) => t.key === "contemporary-ethnic") ?? MARKETPLACE_THEMES[0];
+
+/** Left panel for merchant sign-in / sign-up (Build Brighten brand). Value statements only, no invented numbers. */
 export function MerchantAside({ mode }: { mode: "login" | "register" }) {
   return (
     <>
-      <Wordmark sub="Seller centre" />
-      <div className="max-w-lg">
-        <h2 className="font-display text-[2.75rem] leading-[1.08] tracking-tight">
-          {mode === "register" ? (
-            <>
-              Build the fashion store
-              <br />
-              your brand deserves.
-            </>
-          ) : (
-            <>
-              Welcome back to
-              <br />
-              your studio.
-            </>
-          )}
+      <BrandLogo />
+      <div className="max-w-lg py-10">
+        <h2 className="font-brand text-[2.5rem] font-extrabold leading-[1.1] tracking-tight text-brand-ink">
+          {mode === "register" ? "Your brand. Your store. Your next big beginning." : "Welcome back to your store."}
         </h2>
-        <ul className="mt-10 space-y-6">
+        <ul className="mt-8 space-y-5">
           {MERCHANT_POINTS.map((p) => (
             <li key={p.title} className="flex gap-4">
-              <span className="grid size-9 shrink-0 place-items-center rounded-md border border-[#f4efe9]/15 bg-[#f4efe9]/5">
-                <p.icon aria-hidden className="size-4 text-[#e8a37f]" strokeWidth={1.75} />
+              <span className="grid size-10 shrink-0 place-items-center rounded-brand-md bg-white text-brand shadow-brand-card">
+                <p.icon aria-hidden className="size-5" strokeWidth={1.75} />
               </span>
               <span>
-                <span className="block text-body font-medium">{p.title}</span>
-                <span className="block text-small text-[#f4efe9]/60">{p.body}</span>
+                <span className="block font-semibold text-brand-ink">{p.title}</span>
+                <span className="block text-small text-muted">{p.body}</span>
               </span>
             </li>
           ))}
         </ul>
       </div>
-      <p className="text-small text-[#f4efe9]/50">Made for Indian fashion labels, from block-print kurtas to bridal couture.</p>
+      {ASIDE_THEME ? (
+        <div className="hidden max-h-56 max-w-md overflow-hidden rounded-brand-md border border-border bg-white shadow-brand-float [@media(min-height:900px)]:block" aria-hidden>
+          <ThemeMockup preset={ASIDE_THEME.preset} name={ASIDE_THEME.name.split(" ")[0]!} />
+        </div>
+      ) : null}
     </>
   );
 }

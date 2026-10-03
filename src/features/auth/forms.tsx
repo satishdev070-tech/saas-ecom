@@ -39,7 +39,7 @@ export function SignInForm({ next, variant = "seller" }: { next?: string; varian
   );
 }
 
-export function SignUpForm({ next, defaultStoreName }: { next?: string; defaultStoreName?: string }) {
+export function SignUpForm({ next, defaultStoreName, plan, theme }: { next?: string; defaultStoreName?: string; plan?: string | null; theme?: string | null }) {
   const [state, action] = useActionState(signUpAction, null);
   const errors = fieldErrors(state);
   if (state?.ok && state.data.needsConfirmation) {
@@ -49,18 +49,20 @@ export function SignUpForm({ next, defaultStoreName }: { next?: string; defaultS
           <MailCheck aria-hidden className="size-5" />
         </span>
         <h2 className="text-h2">Check your email</h2>
-        <p className="text-body text-muted">We sent a confirmation link. Open it on this device and we&apos;ll finish setting up your store.</p>
+        <p className="text-body text-muted">We sent a confirmation link to your email. Open it on this device to continue setting up your store; your choices are saved.</p>
       </div>
     );
   }
   return (
     <form action={action} className="space-y-5" noValidate>
       <input type="hidden" name="next" value={next ?? ""} />
+      {plan ? <input type="hidden" name="plan" value={plan} /> : null}
+      {theme ? <input type="hidden" name="theme" value={theme} /> : null}
       <FormMessage state={state} />
       <TextField label="Full name" name="displayName" autoComplete="name" placeholder="Asha Mehta" required errors={errors.displayName} />
-      <TextField label="Work email" name="email" type="email" autoComplete="email" placeholder="you@yourbrand.in" required errors={errors.email} />
+      <TextField label="Email" name="email" type="email" autoComplete="email" placeholder="you@yourbusiness.in" required errors={errors.email} />
       <PasswordField label="Password" name="password" autoComplete="new-password" required errors={errors.password} hint="At least 10 characters with a letter and a number." />
-      <TextField label="Store name" name="storeName" autoComplete="organization" placeholder="e.g. Aangan Jaipur" defaultValue={defaultStoreName} required errors={errors.storeName} hint="You can change it later." />
+      <TextField label="Business name" name="storeName" autoComplete="organization" placeholder="e.g. Asha Crafts" defaultValue={defaultStoreName} required errors={errors.storeName} hint="You'll confirm your store details in the next step." />
       <SubmitButton size="lg" className="w-full">
         Create account
       </SubmitButton>

@@ -111,6 +111,73 @@
   --focus: #7ea2ff;
 }
 
+/*
+ * Build Brighten brand (public marketing site, seller sign-in/sign-up and onboarding). Scoped to
+ * .theme-brand so the seller dashboard and storefronts are unaffected. Always light: marketing
+ * pages pin data-theme="light" so contrast is predictable.
+ *
+ * PROVISIONAL PALETTE: the official logo file was not available when these were chosen, so the
+ * values are not yet sampled from it. Replace the --brand-* values below with the logo's colours
+ * (docs/BRAND.md) and every component picks them up. Contrast checked for the pairs used:
+ * white on --brand-primary 7.9:1, --brand-ink on --brand-accent 8.3:1, --muted on white 7.5:1,
+ * --subtle on white 5.5:1, --brand-primary on --brand-primary-soft 7.0:1 (WCAG AA for body text).
+ */
+.theme-brand {
+  --brand-primary: #4338ca;
+  --brand-primary-hover: #3730a3;
+  --brand-primary-soft: #eef0ff;
+  --brand-ink: #0b1b3f;
+  --brand-accent: #f5a524;
+  --brand-accent-soft: #fff5db;
+  --brand-mint: #e7f7ef;
+  --brand-canvas: #f7f8fc;
+
+  --background: #ffffff;
+  --surface: #ffffff;
+  --surface-secondary: var(--brand-canvas);
+  --surface-elevated: #ffffff;
+  --foreground: #0f172a;
+  --muted: #4b5568;
+  --subtle: #5f6a7d;
+  --border: #e4e7f0;
+  --border-strong: #cfd4e2;
+  --primary: var(--brand-primary);
+  --primary-foreground: #ffffff;
+  --accent: var(--brand-primary);
+  --accent-foreground: #ffffff;
+  --accent-soft: var(--brand-primary-soft);
+  --focus: var(--brand-primary);
+
+  --brand-radius-sm: 8px;
+  --brand-radius-md: 12px;
+  --brand-radius-lg: 18px;
+  --brand-radius-xl: 28px;
+  --brand-shadow-card: 0 1px 2px rgb(15 23 42 / 0.05), 0 8px 24px -12px rgb(15 23 42 / 0.12);
+  --brand-shadow-float: 0 24px 60px -24px rgb(11 27 63 / 0.35);
+  --font-brand-display: var(--font-manrope), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@theme inline {
+  --color-brand: var(--brand-primary);
+  --color-brand-hover: var(--brand-primary-hover);
+  --color-brand-soft: var(--brand-primary-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-soft: var(--brand-accent-soft);
+  --color-brand-mint: var(--brand-mint);
+  --color-brand-canvas: var(--brand-canvas);
+  --radius-brand-sm: var(--brand-radius-sm);
+  --radius-brand-md: var(--brand-radius-md);
+  --radius-brand-lg: var(--brand-radius-lg);
+  --radius-brand-xl: var(--brand-radius-xl);
+  --shadow-brand-card: var(--brand-shadow-card);
+  --shadow-brand-float: var(--brand-shadow-float);
+  --font-brand: var(--font-brand-display);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);

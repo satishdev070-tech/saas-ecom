@@ -3623,6 +3623,8 @@ export type Database = {
           created_at: string;
           updated_at: string;
           category_id: string | null;
+          launch_status: string;
+          launched_at: string | null;
         };
         Insert: {
           tenant_id: string;
@@ -3650,6 +3652,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           category_id?: string | null;
+          launch_status?: string;
+          launched_at?: string | null;
         };
         Update: {
           tenant_id?: string;
@@ -3677,6 +3681,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           category_id?: string | null;
+          launch_status?: string;
+          launched_at?: string | null;
         };
         Relationships: [
           {

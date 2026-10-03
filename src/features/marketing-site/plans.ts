@@ -222,7 +222,7 @@ export function planHighlights(plan: MarketingPlan): string[] {
   } else {
     lines.push("Free store subdomain");
   }
-  if (features.blog) lines.push("Blog & lookbook journal");
+  if (features.blog) lines.push("Blog");
   if (features.storeLocator) lines.push("Store locator page");
   if (features.analyticsExport) lines.push("Analytics CSV exports");
   return lines;
@@ -253,4 +253,37 @@ export function planPriceView(plan: MarketingPlan, period: BillingPeriod): PlanP
     };
   }
   return { amount: formatMoney(plan.monthlyMinor), unit: "/month", note: "Billed monthly" };
+}
+
+export type ComparisonCell = string | boolean;
+export type ComparisonRow = { label: string; cells: ComparisonCell[] };
+
+/**
+ * Feature comparison rows built only from each plan's `limits` and `features` JSON, so the table
+ * can never claim more than the entitlement system enforces. `null` limits mean "no limit set".
+ */
+export function planComparison(plans: readonly MarketingPlan[]): ComparisonRow[] {
+  const count = (n: number | null) => (n === null ? "No limit" : countFormat.format(n));
+  return [
+    { label: "Monthly price", cells: plans.map((p) => `${formatMoney(p.monthlyMinor)}/month`) },
+    { label: "Yearly price", cells: plans.map((p) => `${formatMoney(p.yearlyMinor)}/year`) },
+    { label: "Free trial", cells: plans.map((p) => (p.trialDays > 0 ? `${p.trialDays} days` : false)) },
+    { label: "Products", cells: plans.map((p) => count(p.limits.products)) },
+    { label: "Staff accounts", cells: plans.map((p) => count(p.limits.staff)) },
+    { label: "Media storage", cells: plans.map((p) => (p.limits.storageMb === null ? "No limit" : formatStorage(p.limits.storageMb))) },
+    { label: "Free store subdomain", cells: plans.map(() => true) },
+    { label: "Custom domains", cells: plans.map((p) => (p.features.customDomains && (p.limits.customDomains ?? 0) > 0 ? count(p.limits.customDomains) : false)) },
+    { label: "Blog", cells: plans.map((p) => p.features.blog) },
+    { label: "Store locator page", cells: plans.map((p) => p.features.storeLocator) },
+    { label: "Analytics CSV exports", cells: plans.map((p) => p.features.analyticsExport) },
+  ];
+}
+
+/** True when both billing periods have a real price, so the monthly/yearly switch is meaningful. */
+export function hasYearlyBilling(plans: readonly MarketingPlan[]): boolean {
+  return plans.length > 0 && plans.every((p) => p.yearlyMinor > 0 && p.monthlyMinor > 0);
+}
+
+export function findPlan(plans: readonly MarketingPlan[], code: string | null | undefined): MarketingPlan | undefined {
+  return code ? plans.find((p) => p.code === code) : undefined;
 }

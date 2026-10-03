@@ -16,6 +16,9 @@ export const signUpSchema = z.object({
   /** Optional at the schema level so older links keep working; the merchant form always sends it. */
   storeName: z.string().trim().max(120).optional().transform((v) => v || undefined),
   next: z.string().optional(),
+  /** Choices carried from the marketing site (validated again where they are used). */
+  plan: z.string().regex(/^[a-z0-9][a-z0-9-]{0,31}$/).optional().catch(undefined),
+  theme: z.string().regex(/^[a-z0-9-]{2,40}$/).optional().catch(undefined),
 });
 export const forgotSchema = z.object({ email });
 export const resetSchema = z

@@ -11,8 +11,6 @@ import { clientIpKey, rateLimit } from "@/lib/rate-limit";
 import { platformOrigin } from "@/lib/platform/urls";
 import { ADMIN_LOGIN_PATH, SELLER_LOGIN_PATH, landingPathFor } from "@/lib/auth/landing";
 import { forgotSchema, resetSchema, signInSchema, signUpSchema } from "./schemas";
-import { createStoreFromName } from "@/features/tenants/server/create";
-import { setActiveTenant } from "@/lib/tenant/active";
 
 export async function signInAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   let next = "/dashboard";
@@ -37,14 +35,19 @@ export async function signUpAction(_prev: ActionResult<{ needsConfirmation: bool
   const result = await runAction("auth.signUp", async () => {
     const input = parseInput(signUpSchema, formToObject(fd));
     next = safeRedirectPath(input.next, "/onboarding");
-    const onboarding = input.storeName ? `/onboarding?name=${encodeURIComponent(input.storeName)}` : "/onboarding";
+    const qs = new URLSearchParams();
+    if (input.storeName) qs.set("name", input.storeName);
+    if (input.plan) qs.set("plan", input.plan);
+    if (input.theme) qs.set("theme", input.theme);
+    const onboarding = qs.size ? `/onboarding?${qs}` : "/onboarding";
     await rateLimit("signup:ip", await clientIpKey(), 10, 3600);
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.auth.signUp({
       email: input.email,
       password: input.password,
       options: {
-        data: { display_name: input.displayName, store_name: input.storeName ?? null },
+        // Plan/theme picked on the marketing site survive email confirmation via user metadata.
+        data: { display_name: input.displayName, store_name: input.storeName ?? null, requested_plan: input.plan ?? null, requested_theme: input.theme ?? null },
         emailRedirectTo: `${platformOrigin()}/auth/callback?next=${encodeURIComponent(input.next ? next : onboarding)}`,
       },
     });
@@ -52,16 +55,9 @@ export async function signUpAction(_prev: ActionResult<{ needsConfirmation: bool
       throw new AppError("VALIDATION", { fieldErrors: { _form: [error.message.includes("registered") ? "An account with this email already exists." : "Couldn't create your account. Please try again."] } });
     }
     confirmed = Boolean(data.session);
-    // Signed in straight away (email confirmation off): create the store now when we can.
-    if (data.session && !input.next) {
-      const tenantId = input.storeName ? await createStoreFromName(input.storeName) : null;
-      if (tenantId) {
-        await setActiveTenant(tenantId);
-        next = "/dashboard?welcome=1";
-      } else {
-        next = onboarding;
-      }
-    }
+    // Signed in straight away (email confirmation off): continue to onboarding, where the seller
+    // confirms the store address, category, theme and plan before the (draft) store is created.
+    if (data.session && !input.next) next = onboarding;
     return { needsConfirmation: !data.session };
   });
   if (result.ok && confirmed) redirect(next);
