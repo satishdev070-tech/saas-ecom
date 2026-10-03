@@ -62,6 +62,11 @@ Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprock
 - **Data:** seed fixed (GoTrue token columns, idempotent inserts); `scripts/dev/demo-media/run.mts` generates original demo imagery and publishes the demo theme.
 - **Tests:** `zeroFillDays`; admin stats RPC; shopper↔shopper and shopper→seller/platform isolation.
 
+## Domains settings page resilience (2026-10-03)
+
+- `/dashboard/settings/domains` crashed ("This page couldn't load") in production. The page now degrades instead: `listTenantDomains` falls back to the pre-migration-21 columns when the database lacks `provider`/`provider_status`/`dns_records`/`redirect_hostname` (logs `domains.schema_outdated`; fix by applying `supabase/dev/apply-2100.sql`), `domainSettings()` reads only the variables it needs instead of the whole server env, a failed plan lookup hides only the add form (`domains.allowance_failed`), and any other failure shows an inline message (`domains.page_failed`).
+- Tests: `tests/unit/domains/domains-page-resilience.test.ts`.
+
 ## Root domain switch to buildbrighten.in (2026-10-03)
 
 - Production returned a plain 500 on every host: `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` was not a bare hostname, so `publicEnv()` threw `EnvValidationError` in the proxy. The schema now reduces a pasted URL (`https://www.example.in/`) to the bare root; ports and non-hostnames are still rejected.

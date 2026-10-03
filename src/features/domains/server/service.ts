@@ -2,7 +2,8 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { mapDbError } from "@/lib/supabase/errors";
-import { serverEnv } from "@/lib/env/server";
+import { publicEnv } from "@/lib/env/public";
+import { normalizeHost } from "@/lib/tenant/host";
 import { AppError } from "@/lib/errors";
 import { audit } from "@/lib/audit";
 import { logger } from "@/lib/observability/logger";
@@ -28,6 +29,14 @@ import { ensureVercelDomain, removeFromVercel, type EdgeProvider } from "./verce
 
 export const DOMAIN_COLUMNS =
   "id, tenant_id, hostname, type, status, verification_token, verified_at, ssl_status, is_primary, provider_ref, last_checked_at, last_error, created_at, provider, provider_status, dns_records, redirect_hostname" as const;
+/** Columns that exist before migration 21 (`20261003002100_domains_vercel.sql`). */
+const LEGACY_DOMAIN_COLUMNS =
+  "id, tenant_id, hostname, type, status, verification_token, verified_at, ssl_status, is_primary, provider_ref, last_checked_at, last_error, created_at" as const;
+
+/** PostgREST/Postgres "column does not exist": the database is behind the code (a migration is missing). */
+function isMissingColumn(error: { code?: string; message?: string } | null): boolean {
+  return !!error && (error.code === "42703" || error.code === "PGRST204" || /column .* does not exist/i.test(error.message ?? ""));
+}
 export type DomainRow = Pick<
   Tables<"domains">,
   | "id"
@@ -59,13 +68,16 @@ export type DomainSettings = {
   edge: EdgeProvider | null;
 };
 
+/**
+ * Reads only the settings domains need (not the whole server env), so the Domains page still
+ * renders when an unrelated server secret is missing. Each value is still validated.
+ */
 export function domainSettings(): DomainSettings {
-  const env = serverEnv();
   const vercel = vercelConfig();
-  const cloudflare = cloudflareConfigFrom(env);
+  const cloudflare = cloudflareConfigFrom({ CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID });
   return {
-    rootDomain: env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN,
-    cnameTarget: vercel ? null : (env.CUSTOM_DOMAIN_CNAME_TARGET ?? null),
+    rootDomain: publicEnv().NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN,
+    cnameTarget: vercel ? null : normalizeHost(process.env.CUSTOM_DOMAIN_CNAME_TARGET),
     cloudflare,
     vercel,
     edge: vercel ? "vercel" : cloudflare ? "cloudflare" : null,
@@ -86,15 +98,29 @@ type Actor = { userId: string | null; type: "user" | "platform" | "system" };
 /** Tenant's domains (platform subdomain + custom), as the signed-in member (RLS). */
 export async function listTenantDomains(tenantId: string): Promise<DomainRow[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("domains")
-    .select(DOMAIN_COLUMNS)
-    .eq("tenant_id", tenantId)
-    .neq("status", "removed")
-    .order("type", { ascending: false }) // platform_subdomain first
-    .order("created_at");
-  if (error) throw mapDbError(error, { tenantId });
-  return data ?? [];
+  const list = (columns: string) =>
+    supabase
+      .from("domains")
+      .select(columns)
+      .eq("tenant_id", tenantId)
+      .neq("status", "removed")
+      .order("type", { ascending: false }) // platform_subdomain first
+      .order("created_at");
+  const { data, error } = await list(DOMAIN_COLUMNS);
+  if (!error) return (data ?? []) as unknown as DomainRow[];
+  if (!isMissingColumn(error)) throw mapDbError(error, { tenantId });
+
+  // Database without migration 21: list domains without the edge columns instead of failing.
+  logger.error("domains.schema_outdated", { tenantId, code: error.code, error: error.message, fix: "apply supabase/dev/apply-2100.sql" });
+  const legacy = await list(LEGACY_DOMAIN_COLUMNS);
+  if (legacy.error) throw mapDbError(legacy.error, { tenantId });
+  return ((legacy.data ?? []) as unknown as Omit<DomainRow, "provider" | "provider_status" | "dns_records" | "redirect_hostname">[]).map((d) => ({
+    ...d,
+    provider: null,
+    provider_status: null,
+    dns_records: [],
+    redirect_hostname: null,
+  }));
 }
 
 export type DomainAllowance = { enabled: boolean; limit: number | null; used: number; canAdd: boolean; planName: string | null };

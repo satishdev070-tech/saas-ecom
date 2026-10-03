@@ -4,7 +4,9 @@ import { requireTenantPermission, can } from "@/lib/tenant/membership";
 import { storeOrigin } from "@/lib/platform/urls";
 import { Badge, Card, PageHeader } from "@/components/ui/layout";
 import { EmptyState } from "@/components/ui/states";
-import { domainSettings, getDomainAllowance, listTenantDomains } from "@/features/domains/server/service";
+import { domainSettings, getDomainAllowance, listTenantDomains, type DomainAllowance } from "@/features/domains/server/service";
+import { AppError } from "@/lib/errors";
+import { logger } from "@/lib/observability/logger";
 import { AddDomainForm, RemoveDomainButton, SetPrimaryButton, VerifyDomainButton } from "@/features/domains/components/domain-controls";
 import { DnsInstructions, DomainStatusBadge, ProviderStatusBadge, SslStatusBadge, VercelDnsInstructions } from "@/features/domains/components/domain-display";
 import { parseStoredDnsRecords } from "@/features/domains/vercel-status";
@@ -13,12 +15,50 @@ export const metadata: Metadata = { title: "Domains" };
 
 const dateFmt = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
 
+function errorFields(error: unknown): Record<string, unknown> {
+  return error instanceof AppError ? { code: error.code, message: error.message, context: error.context } : { error };
+}
+
+async function loadDomains(tenantId: string) {
+  const domains = await listTenantDomains(tenantId);
+  let allowance: DomainAllowance | null = null;
+  try {
+    allowance = await getDomainAllowance(tenantId, domains);
+  } catch (error) {
+    // Plan lookup failed: still show the domains, just without the add form.
+    logger.error("domains.allowance_failed", { tenantId, ...errorFields(error) });
+  }
+  return { domains, allowance, ...domainSettings() };
+}
+
 export default async function DomainsSettingsPage() {
   const ctx = await requireTenantPermission("store.read");
   const canManage = can(ctx, "domains.manage");
-  const domains = await listTenantDomains(ctx.tenantId);
-  const allowance = await getDomainAllowance(ctx.tenantId, domains);
-  const { cnameTarget, edge } = domainSettings();
+  let loaded: Awaited<ReturnType<typeof loadDomains>>;
+  try {
+    loaded = await loadDomains(ctx.tenantId);
+  } catch (error) {
+    logger.error("domains.page_failed", { tenantId: ctx.tenantId, ...errorFields(error) });
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Domains"
+          back={
+            <Link href="/dashboard/settings" className="text-muted hover:text-foreground">
+              ← Settings
+            </Link>
+          }
+        />
+        <Card title="Domains are unavailable right now">
+          <p role="alert" className="text-sm text-muted">
+            We couldn&apos;t load your domains. Your store is still online at its current addresses. Please try again in a few minutes; if this keeps
+            happening, contact platform support.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+  const { domains, allowance, cnameTarget, edge } = loaded;
   const platform = domains.filter((d) => d.type === "platform_subdomain");
   const custom = domains.filter((d) => d.type === "custom");
 
@@ -62,14 +102,18 @@ export default async function DomainsSettingsPage() {
       <Card
         title="Custom domains"
         description={
-          allowance.enabled
+          allowance?.enabled
             ? allowance.limit === null
               ? `${allowance.used} connected`
               : `${allowance.used} of ${allowance.limit} used on your ${allowance.planName ?? "current"} plan`
             : undefined
         }
       >
-        {!allowance.enabled ? (
+        {!allowance ? (
+          <p role="status" className="text-sm text-muted">
+            We couldn&apos;t check your plan right now, so adding a domain is paused. Existing domains keep working.
+          </p>
+        ) : !allowance.enabled ? (
           <EmptyState
             title="Custom domains aren't included in your plan"
             description="Upgrade your plan to sell from your own domain, such as www.yourbrand.in."
