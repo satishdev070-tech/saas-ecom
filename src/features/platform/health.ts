@@ -3,7 +3,7 @@
  * values (even partial or masked) are never read into the result.
  */
 export const INTEGRATION_ENV: readonly { id: string; label: string; required: readonly string[]; optional?: readonly string[]; note: string }[] = [
-  { id: "resend", label: "Email (Resend)", required: ["RESEND_API_KEY"], optional: ["EMAIL_FROM"], note: "Transactional emails are logged instead of sent when missing." },
+  { id: "resend", label: "Email (Resend)", required: ["RESEND_API_KEY"], optional: ["EMAIL_FROM"], note: "Transactional emails are logged instead of sent when missing. A key saved in Admin → Email (Resend) overrides the env vars." },
   { id: "cloudflare", label: "Cloudflare for SaaS", required: ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ZONE_ID", "CUSTOM_DOMAIN_CNAME_TARGET"], note: "Needed for custom-domain SSL and routing." },
   { id: "edge", label: "Edge worker signature", required: ["EDGE_SHARED_SECRET"], note: "Without it the app trusts only the literal Host header." },
   { id: "meta", label: "Meta app (Facebook & Instagram)", required: ["META_APP_ID", "META_APP_SECRET"], optional: ["META_GRAPH_VERSION"], note: "Lets sellers connect a Facebook Page and Instagram business account." },

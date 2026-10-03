@@ -4,6 +4,20 @@ import { serverEnv } from "@/lib/env/server";
 import { logger } from "@/lib/observability/logger";
 import { formatFrom, hashRecipient, isEmailAddress, maskEmail, normaliseIdempotencyKey } from "./address";
 import { postToResend } from "./resend";
+import { getAppCredential } from "@/features/platform-apps/server";
+
+/**
+ * The Resend API key and sender: saved in the platform console (/admin/email, stored encrypted)
+ * first, then the RESEND_API_KEY / EMAIL_FROM env vars. Never throws.
+ */
+export async function resolveEmailProvider(env: { RESEND_API_KEY?: string; EMAIL_FROM: string } = serverEnv()): Promise<{ apiKey: string | null; from: string; source: "db" | "env" | null }> {
+  try {
+    const cred = await getAppCredential("resend");
+    return { apiKey: cred?.secret ?? null, from: cred?.extra.from ?? env.EMAIL_FROM, source: cred?.source ?? null };
+  } catch {
+    return { apiKey: env.RESEND_API_KEY ?? null, from: env.EMAIL_FROM, source: env.RESEND_API_KEY ? "env" : null };
+  }
+}
 
 export type EmailSendInput = {
   /** Server-resolved tenant (verified host / membership / verified webhook); null for platform mail. */
@@ -65,16 +79,17 @@ export async function sendEmail(input: EmailSendInput): Promise<EmailSendResult>
     const { data: already } = await admin.from("email_log").select("id").eq("idempotency_key", key).eq("status", "sent").limit(1).maybeSingle();
     if (already) return { status: "skipped", error: "already sent" };
 
-    const from = formatFrom(env.EMAIL_FROM, input.fromName);
+    const provider = await resolveEmailProvider(env);
+    const from = formatFrom(provider.from, input.fromName);
     const replyTo = input.replyTo && isEmailAddress(input.replyTo) ? input.replyTo.trim() : null;
 
-    if (!env.RESEND_API_KEY) {
-      logger.info("email.not_sent_no_provider", { ...meta, reason: "RESEND_API_KEY not set" });
+    if (!provider.apiKey) {
+      logger.info("email.not_sent_no_provider", { ...meta, reason: "Resend API key not set" });
       await record({ status: "logged", provider: "log", error: "RESEND_API_KEY not set" });
       return { status: "logged", error: "email provider not configured" };
     }
 
-    const result = await postToResend({ from, to, subject: input.subject, html: input.html, text: input.text, replyTo, idempotencyKey: key, kind: input.kind }, env.RESEND_API_KEY);
+    const result = await postToResend({ from, to, subject: input.subject, html: input.html, text: input.text, replyTo, idempotencyKey: key, kind: input.kind }, provider.apiKey);
     if (result.ok) {
       await record({ status: "sent", provider: "resend", providerMessageId: result.id });
       return { status: "sent", providerMessageId: result.id };

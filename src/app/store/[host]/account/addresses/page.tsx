@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { deleteAddressAction, setDefaultAddressAction } from "@/features/customer-account/actions";
 import { AddressForm } from "@/features/customer-account/components/forms";
 import { AccountNav } from "../account-nav";
+import { getCheckoutOptions } from "@/features/checkout/server/options";
 
 export const metadata: Metadata = { title: "Addresses", robots: { index: false } };
 
@@ -12,6 +13,7 @@ export default async function AccountAddresses({ params }: PageProps<"/store/[ho
   const { host } = await params;
   const { sf } = await getRenderContext(host);
   const c = await requireStoreCustomer(sf.tenant.tenantId, "/account/addresses");
+  const { locationAutofill } = await getCheckoutOptions(sf.tenant.tenantId);
   const supabase = await createSupabaseServerClient();
   const { data: addresses } = await supabase
     .from("customer_addresses")
@@ -36,7 +38,7 @@ export default async function AccountAddresses({ params }: PageProps<"/store/[ho
               <details>
                 <summary className="sf-link cursor-pointer">Edit</summary>
                 <div className="pt-3">
-                  <AddressForm value={{ id: a.id, label: a.label, name: a.name, phone: a.phone.replace(/^\+91/, ""), line1: a.line1, line2: a.line2, landmark: a.landmark, city: a.city, state: a.state, postalCode: a.postal_code, isDefault: a.is_default }} />
+                  <AddressForm value={{ id: a.id, label: a.label, name: a.name, phone: a.phone.replace(/^\+91/, ""), line1: a.line1, line2: a.line2, landmark: a.landmark, city: a.city, state: a.state, postalCode: a.postal_code, isDefault: a.is_default }} locationAutofill={locationAutofill} />
                 </div>
               </details>
               {!a.is_default ? (
@@ -58,7 +60,7 @@ export default async function AccountAddresses({ params }: PageProps<"/store/[ho
         ))}
       </ul>
       <h2 className="sf-heading mb-4 text-2xl">Add an address</h2>
-      <AddressForm />
+      <AddressForm locationAutofill={locationAutofill} />
     </div>
   );
 }

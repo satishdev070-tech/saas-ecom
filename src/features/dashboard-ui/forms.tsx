@@ -14,6 +14,7 @@ import {
   deleteShippingRateAction,
   resetNotificationTemplateAction,
   saveCodSettingsAction,
+  saveCheckoutOptionsAction,
   saveNotificationTemplateAction,
   savePincodeRuleAction,
   saveShippingRateAction,
@@ -527,6 +528,31 @@ export function CodForm({ v }: { v: { enabled: boolean; fee: string; minOrder: s
           <TextField label="COD fee (₹)" name="fee" inputMode="decimal" defaultValue={v.fee} errors={e.fee} />
           <TextField label="Min order (₹)" name="minOrder" inputMode="decimal" defaultValue={v.minOrder} errors={e.minOrder} />
           <TextField label="Max order (₹)" name="maxOrder" inputMode="decimal" defaultValue={v.maxOrder} hint="0 = no limit" errors={e.maxOrder} />
+        </div>
+      )}
+    </ActionForm>
+  );
+}
+
+export function CheckoutOptionsForm({ v, locationAvailable }: { v: { guestCheckout: boolean; locationAutofill: boolean }; locationAvailable: boolean }) {
+  return (
+    <ActionForm action={saveCheckoutOptionsAction} submitLabel="Save checkout settings">
+      {() => (
+        <div className="space-y-3">
+          <CheckboxField
+            label="Allow guest checkout"
+            name="guestCheckout"
+            value="true"
+            defaultChecked={v.guestCheckout}
+            hint="Shoppers can order with just their email and phone. When off, they must sign in or create an account (email, OTP or Google) before checkout."
+          />
+          <CheckboxField
+            label="Offer “Use my current location” for addresses"
+            name="locationAutofill"
+            value="true"
+            defaultChecked={v.locationAutofill}
+            hint={locationAvailable ? "Fills area, city, state and PIN code from the shopper's device location, with their permission. Nothing is stored." : "Currently switched off for all stores by the platform."}
+          />
         </div>
       )}
     </ActionForm>

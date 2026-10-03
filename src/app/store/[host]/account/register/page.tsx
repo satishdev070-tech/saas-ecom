@@ -6,7 +6,7 @@ import { safeRedirectPath } from "@/lib/http/safe-redirect";
 import { StoreSignUp } from "@/features/customer-account/components/forms";
 import { storeGoogleSignInAction } from "@/features/customer-account/actions";
 import { GoogleButton, OrDivider } from "@/components/auth/google-button";
-import { googleAuthEnabled } from "@/features/auth/google";
+import { googleSignInAvailable } from "@/features/auth/google";
 
 import { StoreAuthSplit, heroImageOf } from "@/features/customer-account/components/store-auth-split";
 
@@ -18,7 +18,7 @@ export default async function StoreRegister({ params, searchParams }: PageProps<
   const next = safeRedirectPath(typeof sp.next === "string" ? sp.next : null, "/account");
   const { sf } = await getRenderContext(host);
   if (await getStoreCustomer(sf.tenant.tenantId)) redirect(next);
-  const google = await googleAuthEnabled();
+  const google = await googleSignInAvailable("shoppers");
   return (
     <StoreAuthSplit image={heroImageOf(sf.theme)} storeName={sf.store.name} heading={`Join ${sf.store.name}`} text="An account makes every order easier." showBenefits>
       <div className="mb-6 space-y-1.5">

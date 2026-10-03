@@ -1,5 +1,6 @@
 "use client";
 
+import { UseMyLocation } from "@/features/geo/components/use-my-location";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { useActionState, useState } from "react";
@@ -197,7 +198,7 @@ export function ProfileForm({ initial }: { initial: { firstName: string; lastNam
 
 export type AddressValue = { id?: string; label?: string | null; name: string; phone: string; line1: string; line2?: string | null; landmark?: string | null; city: string; state: string; postalCode: string; isDefault?: boolean };
 
-export function AddressForm({ value, onDoneLabel = "Save address" }: { value?: AddressValue; onDoneLabel?: string }) {
+export function AddressForm({ value, onDoneLabel = "Save address", locationAutofill = false }: { value?: AddressValue; onDoneLabel?: string; locationAutofill?: boolean }) {
   const [state, action, pending] = useActionState(saveAddressAction, null);
   const e = errs(state);
   return (
@@ -206,6 +207,7 @@ export function AddressForm({ value, onDoneLabel = "Save address" }: { value?: A
       <div className="@[40rem]:col-span-2">
         <FormError state={state} />
         {state?.ok ? <p role="status" className="text-sm">Address saved.</p> : null}
+        {locationAutofill ? <UseMyLocation /> : null}
       </div>
       <Input label="Label (e.g. Home)" name="label" defaultValue={value?.label ?? ""} errors={e} />
       <Input label="Full name" name="name" defaultValue={value?.name} required errors={e} />

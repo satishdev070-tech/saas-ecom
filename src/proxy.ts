@@ -4,7 +4,7 @@ import { publicEnv } from "@/lib/env/public";
 import { normalizeHost } from "@/lib/tenant/host";
 import { decideRoute, STORE_ROUTE_PREFIX, INTERNAL_HOST_HEADER, INTERNAL_REQUEST_HEADERS, REQUEST_ID_HEADER, THEME_PREVIEW_HEADER } from "@/lib/tenant/routing";
 import { THEME_PREVIEW_COOKIE, THEME_PREVIEW_EXIT, THEME_PREVIEW_PARAM, THEME_PREVIEW_TTL_SECONDS, isPreviewKeyShape } from "@/features/theme/marketplace/live-preview";
-import { framingHeaders } from "@/lib/security/headers";
+import { framingHeaders, platformFrameOrigins } from "@/lib/security/headers";
 import { platformOrigin } from "@/lib/platform/urls";
 import { platformHostAliases } from "@/lib/platform/hosts";
 import { EDGE_HOST_HEADER, EDGE_SIG_HEADER, EDGE_TS_HEADER, verifyEdgeHost } from "@/lib/tenant/edge-signature";
@@ -113,7 +113,7 @@ export async function proxy(request: NextRequest) {
     response = NextResponse.next({ request: { headers: forwarded } });
   }
 
-  for (const [key, value] of Object.entries(framingHeaders(isStoreRoute ? "store" : "platform", platformOrigin()))) response.headers.set(key, value);
+  for (const [key, value] of Object.entries(framingHeaders(isStoreRoute ? "store" : "platform", isStoreRoute ? platformFrameOrigins(platformOrigin(), env.NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN, platformAliases(env.NEXT_PUBLIC_PLATFORM_URL)) : []))) response.headers.set(key, value);
   if (previewParam === THEME_PREVIEW_EXIT) response.cookies.delete(THEME_PREVIEW_COOKIE);
   else if (isPreviewKeyShape(previewParam)) {
     // SameSite=None (https only) so navigation inside the marketplace's preview iframe keeps the theme.

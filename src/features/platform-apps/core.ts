@@ -7,7 +7,7 @@ import { z } from "zod";
  * masked hint.
  */
 
-export const APP_PROVIDERS = ["meta", "pinterest", "google", "gemini", "groq", "anthropic"] as const;
+export const APP_PROVIDERS = ["meta", "pinterest", "google", "gemini", "groq", "anthropic", "resend"] as const;
 export type AppProvider = (typeof APP_PROVIDERS)[number];
 
 export const AI_PROVIDERS = ["gemini", "groq", "anthropic"] as const satisfies readonly AppProvider[];
@@ -24,6 +24,7 @@ export const EXTRA_KEYS: Record<AppProvider, readonly string[]> = {
   gemini: ["model"],
   groq: ["model"],
   anthropic: ["model"],
+  resend: ["from"],
 };
 
 export type AppCredential = { clientId: string | null; secret: string; extra: Record<string, string>; source: "db" | "env" };
@@ -39,6 +40,7 @@ const ENV_NAMES: Record<AppProvider, { id?: string; secret: string; extra?: Reco
   gemini: { secret: "GEMINI_API_KEY" },
   groq: { secret: "GROQ_API_KEY" },
   anthropic: { secret: "ANTHROPIC_API_KEY" },
+  resend: { secret: "RESEND_API_KEY", extra: { from: "EMAIL_FROM" } },
 };
 export const envNamesFor = (p: AppProvider) => ENV_NAMES[p];
 
@@ -117,6 +119,9 @@ export function toStatus(provider: AppProvider, cred: AppCredential | null, row:
 
 // ---- Input schemas (shared by the admin form and the server action) -----------------------
 
+/** `Name <addr@domain>` or `addr@domain`; no quotes, commas or control characters (header-safe). */
+export const FROM_RE = /^(?:[^"<>,;:@\\\u0000-\u001f]{1,80} <[^@\s<>"',;]+@[^@\s<>"',;]+\.[^@\s<>"',;]+>|[^@\s<>"',;]+@[^@\s<>"',;]+\.[^@\s<>"',;]+)$/;
+
 const blankToUndef = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : typeof v === "string" ? v.trim() : v);
 
 export const saveAppCredentialSchema = z.object({
@@ -124,6 +129,8 @@ export const saveAppCredentialSchema = z.object({
   clientId: z.preprocess(blankToUndef, z.string().max(300).regex(/^[A-Za-z0-9._-]{3,300}$/, "Use the App ID / client ID exactly as shown in the developer console").optional()),
   /** Write-only: blank keeps the saved secret. */
   secret: z.preprocess(blankToUndef, z.string().min(10, "That secret looks too short").max(500).regex(/^\S+$/, "Secrets don't contain spaces").optional()),
+  /** Resend only: the sender mailbox, on a domain verified in Resend. Not secret. */
+  from: z.preprocess(blankToUndef, z.string().max(200).regex(FROM_RE, "Use an address on your verified domain, e.g. Build Brighten <no-reply@mail.buildbrighten.in>").optional()),
 });
 export type SaveAppCredentialInput = z.infer<typeof saveAppCredentialSchema>;
 

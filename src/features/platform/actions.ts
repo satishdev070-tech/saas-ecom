@@ -45,6 +45,8 @@ import {
   updatePlatformSetting,
   updatePlatformUser,
 } from "./server/mutations";
+import { clearBrandImage, revalidatePublicConfig, uploadBrandImage } from "./server/public-config";
+import { BRAND_SLOTS } from "./public-config";
 
 /**
  * Super-admin server actions: validate (zod) → authenticate + authorize (platform role
@@ -255,6 +257,34 @@ export async function updatePlatformSettingAction(_prev: ActionResult | null, fd
     const ctx = await platformActor("platform.settings.manage");
     await updatePlatformSetting(ctx, key, raw.value);
     revalidatePath("/admin/settings");
+    if (key.startsWith("public.")) {
+      revalidatePublicConfig();
+      revalidatePath("/admin/branding");
+      revalidatePath("/admin/sign-in");
+    }
+  });
+}
+
+// ---- Branding (marketing-site logos and favicon) -------------------------------------
+
+export async function uploadBrandImageAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return runAction("platform.branding.upload", async () => {
+    const { slot } = parseInput(z.object({ slot: z.enum(BRAND_SLOTS) }), formToObject(fd));
+    const ctx = await platformActor("platform.settings.manage");
+    await rateLimit("platform-branding", ctx.user.id, 20, 600);
+    await uploadBrandImage(ctx, slot, fd.get("file") as File);
+    revalidatePublicConfig();
+    revalidatePath("/admin/branding");
+  });
+}
+
+export async function clearBrandImageAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  return runAction("platform.branding.clear", async () => {
+    const { slot } = parseInput(z.object({ slot: z.enum(BRAND_SLOTS) }), formToObject(fd));
+    const ctx = await platformActor("platform.settings.manage");
+    await clearBrandImage(ctx, slot);
+    revalidatePublicConfig();
+    revalidatePath("/admin/branding");
   });
 }
 

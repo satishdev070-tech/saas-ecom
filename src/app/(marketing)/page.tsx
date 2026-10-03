@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { buildMarketingMetadata, faqJsonLd, organizationJsonLd, serializeJsonLd, SITE_DESCRIPTION, softwareApplicationJsonLd } from "@/features/marketing-site/seo";
 import { siteOrigin, storeRootDomain } from "@/features/marketing-site/site";
-import { buildFaqs, PRICING_HREF, SECTION_IDS } from "@/features/marketing-site/content";
+import { buildFaqs, CATEGORY_CARDS, PRICING_HREF, SECTION_IDS } from "@/features/marketing-site/content";
 import { maxTrialDays } from "@/features/marketing-site/plans";
 import { getMarketingPlans } from "@/features/marketing-site/server/plans";
 import { livePreviewUrls } from "@/features/marketing-site/server/themes";
-import { findTheme, showcaseThemes } from "@/features/marketing-site/themes";
+import { findTheme, showcaseThemes, themeForIndustry } from "@/features/marketing-site/themes";
 import { PricingTable } from "@/features/marketing-site/components/pricing-table";
 import { ButtonLink, Section, SectionHeading } from "@/features/marketing-site/components/ui";
 import { Benefits, Categories, FaqSection, FinalCta, Hero, HowItWorks, ThemeShowcase } from "@/features/marketing-site/components/home-sections";
@@ -25,15 +25,17 @@ export function generateMetadata(): Metadata {
 export default async function HomePage() {
   const origin = siteOrigin();
   const themes = showcaseThemes(SHOWCASE_INDUSTRIES);
-  const [plans, previews] = await Promise.all([getMarketingPlans(), livePreviewUrls(themes)]);
+  const hero = findTheme(HERO_THEME) ?? themes[0];
+  const categoryThemes = CATEGORY_CARDS.flatMap((c) => themeForIndustry(c.industry) ?? []);
+  const [plans, previews] = await Promise.all([getMarketingPlans(), livePreviewUrls([...themes, ...categoryThemes, ...(hero ? [hero] : [])])]);
   const trialDays = maxTrialDays(plans);
   const faqs = buildFaqs(storeRootDomain(), trialDays);
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd([organizationJsonLd(origin), softwareApplicationJsonLd(origin, plans), faqJsonLd(faqs)]) }} />
-      <Hero theme={findTheme(HERO_THEME) ?? themes[0]} trialDays={trialDays} />
+      <Hero theme={hero} previewUrl={hero ? (previews.get(hero.key) ?? null) : null} trialDays={trialDays} />
       <Benefits />
-      <Categories />
+      <Categories previews={previews} />
       <ThemeShowcase themes={themes} previews={previews} />
       <HowItWorks />
       <ProductDemos rootDomain={storeRootDomain()} />

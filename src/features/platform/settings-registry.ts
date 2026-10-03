@@ -7,7 +7,8 @@ import { z } from "zod";
  */
 export type SettingKind = "boolean" | "text" | "email" | "number" | "textarea";
 
-type SettingDef = { key: string; label: string; description: string; kind: SettingKind; schema: z.ZodType; defaultValue: unknown };
+/** `page`: shown on that dedicated admin page instead of /admin/settings. */
+type SettingDef = { key: string; label: string; description: string; kind: SettingKind; schema: z.ZodType; defaultValue: unknown; page?: "branding" | "sign-in" };
 
 const optionalText = (max: number) =>
   z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? null : v), z.string().trim().max(max).nullable());
@@ -60,6 +61,46 @@ export const PLATFORM_SETTINGS: readonly SettingDef[] = [
     kind: "textarea",
     schema: optionalText(200),
     defaultValue: null,
+  },
+  // ---- Public keys (anon-readable, migration 2500); see features/platform/public-config ----
+  {
+    key: "public.analytics.ga4_id",
+    label: "Google Analytics 4 measurement ID",
+    description: "Adds the Google tag (gtag.js) to the public marketing site. Format G-XXXXXXXXXX, from GA4 → Admin → Data streams. Leave blank to remove. Visitors with Global Privacy Control or Do Not Track on are not tracked.",
+    kind: "text",
+    schema: z.preprocess(
+      (v) => (typeof v === "string" ? (v.trim() === "" ? null : v.trim().toUpperCase()) : v),
+      z.string().regex(/^G-[A-Z0-9]{4,20}$/, "Use the GA4 measurement ID, e.g. G-AB12CD34EF").nullable(),
+    ),
+    defaultValue: null,
+    page: "branding",
+  },
+  {
+    key: "public.auth.google_sellers",
+    label: "Google sign-in for sellers",
+    description: "Shows “Continue with Google” on seller sign-in and sign-up, when the Google provider is enabled in Supabase Auth.",
+    kind: "boolean",
+    schema: z.boolean(),
+    defaultValue: true,
+    page: "sign-in",
+  },
+  {
+    key: "public.auth.google_shoppers",
+    label: "Google sign-in for store customers",
+    description: "Shows “Continue with Google” on every store's customer sign-in and sign-up pages, when the Google provider is enabled in Supabase Auth.",
+    kind: "boolean",
+    schema: z.boolean(),
+    defaultValue: true,
+    page: "sign-in",
+  },
+  {
+    key: "public.checkout.location_autofill",
+    label: "“Use my location” address autofill",
+    description: "Lets shoppers fill city, state and PIN code at checkout from their device location (asked by the browser, never stored). Each store can also turn it off.",
+    kind: "boolean",
+    schema: z.boolean(),
+    defaultValue: true,
+    page: "sign-in",
   },
 ] as const;
 

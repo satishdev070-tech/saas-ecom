@@ -6,7 +6,7 @@
 export const securityHeaders: { key: string; value: string }[] = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), browsing-topics=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
 ];
@@ -17,15 +17,30 @@ export const securityHeaders: { key: string; value: string }[] = [
  * `frame-ancestors` supersedes X-Frame-Options in modern browsers; XFO stays for old ones
  * where it can express the policy (it can't list another origin, so storefronts omit it).
  */
-export function framingHeaders(kind: "store" | "platform", platformOrigin: string): Record<string, string> {
+export function framingHeaders(kind: "store" | "platform", platformOrigins: string | readonly string[]): Record<string, string> {
   if (kind === "store") {
-    let origin = "";
-    try {
-      origin = new URL(platformOrigin).origin;
-    } catch {
-      origin = "";
+    const origins = new Set<string>();
+    for (const value of typeof platformOrigins === "string" ? [platformOrigins] : platformOrigins) {
+      try {
+        const url = new URL(value);
+        if (url.protocol === "https:" || url.protocol === "http:") origins.add(url.origin);
+      } catch {
+        // Not a URL: never widen the policy with it.
+      }
     }
-    return { "Content-Security-Policy": `frame-ancestors 'self'${origin ? ` ${origin}` : ""}` };
+    return { "Content-Security-Policy": `frame-ancestors 'self'${[...origins].map((o) => ` ${o}`).join("")}` };
   }
   return { "Content-Security-Policy": "frame-ancestors 'self'", "X-Frame-Options": "SAMEORIGIN" };
+}
+
+/**
+ * Every exact origin that serves the platform app (and so may frame storefront previews): the
+ * configured platform URL, the root domain and its www host, plus the exact aliases from
+ * lib/platform/hosts. Never a wildcard.
+ */
+export function platformFrameOrigins(platformOrigin: string, rootDomain: string, aliases: readonly string[]): string[] {
+  const out = [platformOrigin];
+  if (rootDomain && rootDomain !== "localhost") out.push(`https://${rootDomain}`, `https://www.${rootDomain}`);
+  for (const host of aliases) out.push(`https://${host}`);
+  return out;
 }

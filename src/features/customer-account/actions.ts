@@ -1,5 +1,6 @@
 "use server";
 
+import { getPublicPlatformConfig } from "@/features/platform/server/public-config";
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -398,6 +399,7 @@ export async function storeGoogleSignInAction(fd: FormData): Promise<void> {
   const next = safeRedirectPath(typeof fd.get("next") === "string" ? (fd.get("next") as string) : "", "/account");
   const tenant = await requireStoreTenant();
   await rateLimit("store-login:ip", await clientIpKey(), 20, 600);
+  if (!(await getPublicPlatformConfig()).googleForShoppers) redirect("/account/login?error=google");
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",

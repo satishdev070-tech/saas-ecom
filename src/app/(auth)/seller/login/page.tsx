@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { SignInForm } from "@/features/auth/forms";
 import { googleSignInAction } from "@/features/auth/actions";
 import { GoogleButton, OrDivider } from "@/components/auth/google-button";
-import { googleAuthEnabled } from "@/features/auth/google";
+import { googleSignInAvailable } from "@/features/auth/google";
 
 import { getSessionUser } from "@/lib/auth/session";
 import { landingPathFor } from "@/lib/auth/landing";
@@ -18,7 +18,7 @@ export default async function SellerLoginPage({ searchParams }: PageProps<"/sell
   const requested = typeof sp.next === "string" ? safeRedirectPath(sp.next, "") : "";
   const user = await getSessionUser();
   if (user) redirect(requested || (await landingPathFor(user.id)));
-  const google = await googleAuthEnabled();
+  const google = await googleSignInAvailable("sellers");
   return (
     <AuthSplit variant="merchant" aside={<MerchantAside mode="login" />}>
       <AuthHeading eyebrow="Merchant login" title="Sign in to your store" description="Manage products, orders and your storefront." />

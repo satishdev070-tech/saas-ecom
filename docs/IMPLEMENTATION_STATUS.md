@@ -1,6 +1,6 @@
 # Implementation Status
 
-_Last updated: 2026-10-03 (Build Brighten marketing site, seller onboarding, draft stores)_
+_Last updated: 2026-10-03 (live theme previews, platform branding / GA4 / sign-in / email console, checkout options)_
 
 ## Phase overview
 
@@ -33,6 +33,40 @@ _Last updated: 2026-10-03 (Build Brighten marketing site, seller onboarding, dra
 | Runtime vs real Supabase (`next start`) | ✅ store pages 0.4–0.7 s, marketing 0.02 s; order #1 placed, paid and confirmed; seller, staff and shopper sign-in verified |
 
 Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprocket, Cloudflare custom hostnames.
+
+## Live theme previews, platform console options, checkout options (2026-10-03)
+
+- **Real theme previews.** Marketing hero, category cards, theme cards and the theme detail page
+  now show the theme live on its demo store (`?sf_theme=<key>`, applied in memory only), in lazy,
+  scaled iframes rendered at true device sizes: desktop 1280×800 and phone 390×844 (the phone
+  frame shows the store's real mobile layout). The token mockup is the fallback until the demo
+  loads, or when a theme has no demo store. Store pages may now be framed by every exact platform
+  origin (root, `www`, aliases) instead of only `NEXT_PUBLIC_PLATFORM_URL`, so previews also work
+  on the apex `buildbrighten.in` (`platformFrameOrigins`, `src/lib/security/headers.ts`).
+- **Migration 2500** (`20261003002500_platform_branding_checkout.sql`, `supabase/dev/apply-2500.sql`),
+  additive only: anon may read `platform_settings` keys under `public.`; public `platform-branding`
+  storage bucket (writes need `platform.settings.manage`, no SVG); `resend` allowed in
+  `platform_app_credentials`; `stores.checkout_settings jsonb default '{}'`. Code fails open to
+  today's behaviour until it is applied.
+- **Admin → Branding & analytics** (`/admin/branding`): header logo, footer logo and favicon for
+  the marketing site, seller sign-in and onboarding (falls back to the text wordmark); GA4
+  measurement ID → gtag.js on marketing pages only, skipped for GPC / Do Not Track visitors,
+  with page views on client navigation and `data-analytics` CTA clicks as events.
+- **Admin → Sign-in & checkout** (`/admin/sign-in`): Google provider status (from Supabase Auth),
+  the exact redirect URLs to register, and switches for Google sign-in for sellers and for store
+  customers (enforced in the server actions too) and for location autofill.
+- **Admin → Email (Resend)** (`/admin/email`): API key (AES-GCM encrypted, write-only) and From
+  address; DB values override `RESEND_API_KEY` / `EMAIL_FROM`; "send a test email to me".
+- **Stores: Dashboard → Settings → Checkout**: guest checkout on/off (when off, checkout redirects
+  to sign-in and `placeOrder` refuses guests) and "Use my current location" on/off. Checkout shows
+  "Check out faster with Google" to signed-out shoppers when Google sign-in is available.
+- **Location autofill**: browser geolocation (Permissions-Policy now `geolocation=(self)`) →
+  `/api/geo/reverse` → OpenStreetMap Nominatim (rate limited per IP and globally to ~1 req/s,
+  identified User-Agent, attribution shown). Fills area, city, state, PIN; never the house line;
+  coordinates rounded and not stored. India only. For high volume, switch to a commercial
+  geocoder (single function in `src/app/api/geo/reverse/route.ts`).
+- Tests: `tests/unit/platform-config/public-config.test.ts`, `tests/rls/platform-branding.test.ts`.
+- Not verified here (no outbound network): real Nominatim responses, Resend delivery, GA4 hits.
 
 ## Theme marketplace direct apply (2026-10-01)
 

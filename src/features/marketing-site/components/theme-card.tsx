@@ -5,12 +5,28 @@ import { THEME_STYLE_LABELS, type MarketplaceTheme } from "@/features/theme/mark
 import { industryShort } from "@/features/stores/industries";
 import { analyticsAttributes } from "../analytics";
 import { buttonClass } from "./ui";
+import { DESKTOP_VIEWPORT, LiveFrame, PHONE_VIEWPORT } from "./live-frame";
 
 /** Short display name for the theme's mock store header ("Heritage Kashmir" -> "Heritage"). */
 const mockName = (t: MarketplaceTheme) => t.name.split(" ")[0]!;
 
-/** Desktop browser frame + phone frame, both drawn from the theme's own tokens. */
-export function ThemeDevicePreview({ theme, size = "card" }: { theme: MarketplaceTheme; size?: "card" | "large" }) {
+/**
+ * Desktop browser frame + phone frame. With a live demo URL both frames show the real demo store
+ * rendered at true device widths (1280px desktop, 390x844 phone); otherwise, or until the demo
+ * loads, they show the mockup drawn from the theme's own tokens.
+ */
+export function ThemeDevicePreview({ theme, previewUrl = null, size = "card", eager = false }: { theme: MarketplaceTheme; previewUrl?: string | null; size?: "card" | "large"; eager?: boolean }) {
+  const background = theme.preset.tokens.colors.background;
+  const desktopFallback = (
+    <div className="h-full" style={{ background }}>
+      <ThemeMockup preset={theme.preset} name={mockName(theme)} size={size === "large" ? "large" : "card"} />
+    </div>
+  );
+  const phoneFallback = (
+    <div className="h-full" style={{ background }}>
+      <ThemeMockup preset={theme.preset} name={mockName(theme)} size="phone" />
+    </div>
+  );
   return (
     <div className="relative" aria-hidden>
       <div className="overflow-hidden rounded-brand-md border border-border bg-white shadow-brand-card">
@@ -19,11 +35,17 @@ export function ThemeDevicePreview({ theme, size = "card" }: { theme: Marketplac
           <span className="size-2 rounded-full bg-border-strong" />
           <span className="size-2 rounded-full bg-border-strong" />
         </div>
-        <ThemeMockup preset={theme.preset} name={mockName(theme)} size={size === "large" ? "large" : "card"} />
+        {previewUrl ? <LiveFrame src={previewUrl} viewport={DESKTOP_VIEWPORT} fallback={desktopFallback} eager={eager} /> : desktopFallback}
       </div>
-      <div className={size === "large" ? "absolute -bottom-6 right-4 w-[26%] min-w-28" : "absolute -bottom-4 right-3 w-[30%]"}>
-        <div className="overflow-hidden rounded-[18px] border-[5px] border-brand-ink bg-white shadow-brand-float">
-          <ThemeMockup preset={theme.preset} name={mockName(theme)} size="phone" />
+      <div className={size === "large" ? "absolute -bottom-8 right-3 w-[24%] min-w-24 sm:right-5" : "absolute -bottom-5 right-2 w-[24%]"}>
+        <div className={`overflow-hidden border-brand-ink bg-brand-ink shadow-brand-float ${size === "large" ? "rounded-[22px] border-[6px]" : "rounded-[14px] border-4"}`}>
+          {previewUrl ? (
+            <LiveFrame src={previewUrl} viewport={PHONE_VIEWPORT} fallback={phoneFallback} eager={eager} />
+          ) : (
+            <div style={{ aspectRatio: `${PHONE_VIEWPORT.width} / ${PHONE_VIEWPORT.height}` }} className="overflow-hidden">
+              {phoneFallback}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -35,8 +57,8 @@ export function ThemeCard({ theme, previewUrl, headingLevel = "h3", location }: 
   return (
     <article className="group flex h-full flex-col rounded-brand-lg border border-border bg-white p-4 transition-shadow hover:shadow-brand-card">
       <Link href={`/themes/${theme.key}`} className="block rounded-brand-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand" tabIndex={-1} aria-hidden>
-        <div className="pb-5">
-          <ThemeDevicePreview theme={theme} />
+        <div className="pb-6">
+          <ThemeDevicePreview theme={theme} previewUrl={previewUrl} />
         </div>
       </Link>
       <div className="mt-3 flex flex-1 flex-col">
