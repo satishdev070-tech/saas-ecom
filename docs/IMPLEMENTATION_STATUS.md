@@ -1,6 +1,6 @@
 # Implementation Status
 
-_Last updated: 2026-10-03 (platform host aliases: the Vercel URL serves the platform, not a store)_
+_Last updated: 2026-10-03 (Build Brighten marketing site, seller onboarding, draft stores)_
 
 ## Phase overview
 
@@ -61,6 +61,17 @@ Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprock
 - **Platform:** Server Action / proxy body limit 25 MB (uploads over 1 MB failed before).
 - **Data:** seed fixed (GoTrue token columns, idempotent inserts); `scripts/dev/demo-media/run.mts` generates original demo imagery and publishes the demo theme.
 - **Tests:** `zeroFillDays`; admin stats RPC; shopper↔shopper and shopper→seller/platform isolation.
+
+## Build Brighten marketing site + seller onboarding (2026-10-03)
+
+- Brand: platform name is now "Build Brighten". `.theme-brand` tokens in `globals.css` (provisional palette; the logo file wasn't available; see `docs/BRAND.md`). `BrandLogo` renders a text wordmark until `PLATFORM_LOGO` is set.
+- Marketing (`src/app/(marketing)`): new home, `/features`, `/pricing` (plan cards, monthly/yearly toggle, comparison table from plan limits/features), `/themes` (search, category filter, pagination, loading/error/empty states), `/themes/[key]` (detail + live demo preview), `/themes/[key]/use` (signup / onboarding / dashboard handoff), `/how-it-works`. Accessible header with mobile menu, footer, platform `sitemap.xml` + `robots.txt`.
+- Theme previews: token-driven `ThemeMockup` (new `phone` size) per theme; "Preview Theme" opens the theme on its demo store (`?sf_theme`, in-memory, showcase tenants only).
+- Sign-up carries `?plan` / `?theme` through registration, Google sign-in and email confirmation (user metadata `requested_plan` / `requested_theme`). New accounts always go through onboarding (the auto-create-from-name path was removed).
+- Onboarding (`/onboarding`): Account → Business (name, category, address; server-validated slug, duplicate-safe retry) → Theme (applied as a draft via `theme/server/apply-marketplace.ts`, now server-only) → Plan (preference only: saved to the account and audited as `tenant.plan_requested`; no entitlement change, no checkout exists) → Ready checklist + preview. Resumes an owned draft store; existing sellers get a choice instead of a duplicate store.
+- Draft stores: migration 2400 (`stores.launch_status`, default `live` so every existing store is unchanged). Onboarding creates `draft` stores; storefront shows "coming soon" (noindex, robots `Disallow`, no sitemap) unless the owner's signed preview cookie is present. Dashboard home shows Preview / Publish (`settings.write`). All reads fail open to `live`.
+- Tests: `tests/unit/marketing-site`, `tests/unit/onboarding/*` (steps, launch, actions incl. forged store ids and duplicate submits), `tests/rls/store-launch.test.ts`.
+- To apply: run `supabase/dev/apply-2400.sql`. Not built: online plan billing (no payment integration for subscriptions exists).
 
 ## Domains settings page resilience (2026-10-03)
 

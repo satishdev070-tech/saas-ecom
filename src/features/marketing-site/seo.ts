@@ -9,7 +9,7 @@ export const OG_IMAGE_PATH = "/og";
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const;
 
 export const SITE_DESCRIPTION =
-  "Launch a premium online store for your fashion brand, manage products, orders, customers and marketing from one dashboard, and sell with UPI, cards and cash on delivery across India.";
+  "Create your online store, showcase your products and manage orders, payments and shipping from one dashboard. Build Brighten is an e-commerce platform for Indian businesses.";
 
 type MetadataInput = {
   /** Page title. The home page passes an absolute title; inner pages use the root template. */
@@ -31,7 +31,7 @@ function safeUrl(origin: string): URL | undefined {
 
 export function buildMarketingMetadata({ title, absoluteTitle = false, description, path, origin }: MetadataInput): Metadata {
   const socialTitle = absoluteTitle ? title : `${title} · ${PLATFORM_NAME}`;
-  const image = { url: OG_IMAGE_PATH, ...OG_IMAGE_SIZE, alt: `${PLATFORM_NAME} — e-commerce for Indian fashion brands` };
+  const image = { url: OG_IMAGE_PATH, ...OG_IMAGE_SIZE, alt: `${PLATFORM_NAME} — online stores for Indian businesses` };
   return {
     metadataBase: safeUrl(origin),
     title: absoluteTitle ? { absolute: title } : title,

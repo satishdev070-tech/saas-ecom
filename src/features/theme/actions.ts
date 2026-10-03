@@ -6,7 +6,7 @@ import { runAction, type ActionResult } from "@/lib/actions/result";
 import { formToObject } from "@/lib/actions/form";
 import { parseInput, uuid } from "@/lib/validation/common";
 import { AppError } from "@/lib/errors";
-import { assertPermission, requireTenant, type TenantContext } from "@/lib/tenant/membership";
+import { assertPermission, requireTenant } from "@/lib/tenant/membership";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mapDbError } from "@/lib/supabase/errors";
 import { uploadTenantImage, uploadTenantVideo } from "@/lib/storage/upload";
@@ -17,10 +17,7 @@ import { assetsBelongToTenant, parseThemeConfigStrict, MAX_CONFIG_BYTES, type Th
 import { DEFAULT_THEME_KEY } from "./default-theme";
 import { previewEntryUrl } from "./preview";
 import { createPreviewToken } from "./server/preview";
-import { getThemeEditorData } from "./server/queries";
-import { findMarketplaceTheme } from "./marketplace/catalog";
-import { applyThemePreset } from "./marketplace/apply";
-import { getEntitlements } from "@/features/platform";
+import { applyMarketplaceThemeToDraft } from "./server/apply-marketplace";
 
 /**
  * Theme editor mutations. Every action: validate -> authenticate (seller session) ->
@@ -199,35 +196,6 @@ export async function refreshPreviewUrlAction(): Promise<ActionResult<{ url: str
 }
 
 const applyThemeSchema = z.object({ key: z.string().regex(/^[a-z0-9-]{2,40}$/) });
-
-/** Build or replace the active store's draft with a marketplace preset. */
-async function applyMarketplaceThemeToDraft(ctx: TenantContext, key: string) {
-  const ent = await getEntitlements(ctx.tenantId);
-  if (!ent.isEnabled("theme_marketplace")) throw new AppError("FORBIDDEN", { message: "The theme marketplace isn't available on your plan." });
-  const theme = findMarketplaceTheme(key);
-  if (!theme) throw new AppError("NOT_FOUND");
-
-  const data = await getThemeEditorData(ctx.tenantId);
-  const parsed = parseThemeConfigStrict(applyThemePreset(data.config, theme.preset));
-  if (!parsed.ok) throw new AppError("INTERNAL", { message: "This theme couldn't be applied to your store. Please contact support.", context: { issues: parsed.issues.slice(0, 5) } });
-  if (!assetsBelongToTenant(parsed.config, ctx.tenantId)) throw new AppError("VALIDATION", { fieldErrors: { _form: ["Some images don't belong to this store."] } });
-
-  const supabase = await createSupabaseServerClient();
-  const { data: draft, error: draftError } = await supabase.from("theme_versions").select("id").eq("tenant_id", ctx.tenantId).eq("status", "draft").maybeSingle();
-  if (draftError) throw mapDbError(draftError);
-  if (draft) {
-    const { error } = await supabase.from("theme_versions").update({ config: parsed.config as unknown as Json, theme_key: theme.key, label: theme.name }).eq("id", draft.id).eq("tenant_id", ctx.tenantId).eq("status", "draft");
-    if (error) throw mapDbError(error);
-  } else {
-    const { data: latest, error: latestError } = await supabase.from("theme_versions").select("version").eq("tenant_id", ctx.tenantId).order("version", { ascending: false }).limit(1).maybeSingle();
-    if (latestError) throw mapDbError(latestError);
-    const { error } = await supabase
-      .from("theme_versions")
-      .insert({ tenant_id: ctx.tenantId, theme_key: theme.key, label: theme.name, version: (latest?.version ?? 0) + 1, status: "draft", config: parsed.config as unknown as Json, created_by: ctx.user.id });
-    if (error) throw mapDbError(error);
-  }
-  return { supabase, theme };
-}
 
 /**
  * Theme marketplace "Apply": builds a new DRAFT from the chosen preset + the store's current

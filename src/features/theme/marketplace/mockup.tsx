@@ -8,7 +8,7 @@ import type { ThemePreset } from "./catalog";
 const RADIUS: Record<string, string> = { none: "0", sm: "4px", md: "8px", lg: "14px" };
 const BTN: Record<string, string> = { square: "0", rounded: "6px", pill: "999px" };
 
-export function ThemeMockup({ preset, name, size = "card" }: { preset: ThemePreset; name: string; size?: "card" | "large" }) {
+export function ThemeMockup({ preset, name, size = "card" }: { preset: ThemePreset; name: string; size?: "card" | "large" | "phone" }) {
   const t = preset.tokens as Record<string, unknown> & { colors: Record<string, string> };
   const c = t.colors;
   const heading = FONT_STACKS[(t.headingFont as FontKey) ?? "editorial-serif"]?.stack;
@@ -17,9 +17,10 @@ export function ThemeMockup({ preset, name, size = "card" }: { preset: ThemePres
   const radius = RADIUS[String(t.cardRadius)] ?? "0";
   const btnRadius = BTN[String(t.buttonShape)] ?? "0";
   const outline = t.buttonVariant === "outline";
-  const center = preset.headerLayout === "logo-center";
+  const phone = size === "phone";
+  const center = phone || preset.headerLayout === "logo-center";
   const heroDark = preset.hero.textTone === "light";
-  const cards = size === "large" ? 4 : 3;
+  const cards = size === "large" ? 4 : phone ? 2 : 3;
   const tall = String(preset.productCard.imageRatio) === "tall" ? "3/4.4" : String(preset.productCard.imageRatio) === "square" ? "1/1" : "3/4";
   const footerBg = preset.footerTone === "dark" ? c.primary : preset.footerTone === "muted" ? c.border : c.background;
 
