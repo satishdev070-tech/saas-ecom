@@ -50,7 +50,8 @@ export const listMemberships = cache(async (userId: string): Promise<Membership[
     .eq("status", "active")
     .order("created_at");
   if (error) throw new AppError("INTERNAL", { context: { db: error.message } });
-  return (data ?? []).map((m) => ({
+  // Stores their owner closed (status 'cancelled') leave the switcher; support can reopen them.
+  return (data ?? []).filter((m) => m.tenants.status !== "cancelled").map((m) => ({
     tenantId: m.tenant_id,
     role: m.role as MembershipRole,
     customRole: m.tenant_custom_roles

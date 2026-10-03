@@ -7,7 +7,7 @@ import { normalizeHost } from "@/lib/tenant/host";
 import { AppError } from "@/lib/errors";
 import { audit } from "@/lib/audit";
 import { logger } from "@/lib/observability/logger";
-import { assertPermission, type TenantContext } from "@/lib/tenant/membership";
+import { assertPermission, membershipPermissions, type TenantContext } from "@/lib/tenant/membership";
 import type { Tables } from "@/lib/supabase/database.types";
 import { getTenantEntitlements } from "@/features/platform";
 import { canAddAnotherDomain, checkCustomDomain, statusAfterFailedCheck, FAILED_RECHECK_HOURS, type SslStatus } from "../rules";
@@ -229,6 +229,31 @@ export async function setPrimaryDomain(ctx: TenantContext, domainId: string): Pr
   const { error } = await supabase.rpc("set_primary_domain", { p_domain: domainId });
   if (error) throw mapDbError(error, { domainId });
   await audit({ tenantId: ctx.tenantId, actorUserId: ctx.user.id, action: "domain.primary_changed", entityType: "domain", entityId: domainId, metadata: { hostname: row.hostname } });
+}
+
+/**
+ * Moves a connected custom domain to another store the same seller manages (domains.manage on
+ * both; RLS-checked again in move_custom_domain). The hostname doesn't change, so it stays
+ * verified and live on the edge: no DNS change, no downtime. A verified domain becomes the
+ * target store's primary address.
+ */
+export async function moveCustomDomain(ctx: TenantContext, domainId: string, targetTenantId: string): Promise<{ hostname: string; madePrimary: boolean }> {
+  assertPermission(ctx, "domains.manage");
+  const target = ctx.memberships.find((m) => m.tenantId === targetTenantId);
+  if (!target || targetTenantId === ctx.tenantId || !membershipPermissions(target).has("domains.manage")) {
+    throw new AppError("VALIDATION", { fieldErrors: { targetTenantId: ["Choose another store you manage."] } });
+  }
+  const allowance = await getDomainAllowance(targetTenantId);
+  if (!allowance.enabled || !allowance.canAdd) {
+    throw new AppError("VALIDATION", { fieldErrors: { targetTenantId: [`${target.tenantName}'s plan doesn't allow another custom domain. Upgrade it or remove a domain there first.`] } });
+  }
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("move_custom_domain", { p_domain: domainId, p_target: targetTenantId });
+  if (error) throw mapDbError(error, { domainId });
+  const moved = data?.[0];
+  if (!moved || moved.source_tenant !== ctx.tenantId) throw new AppError("NOT_FOUND");
+  // Audited inside move_custom_domain (both stores' logs).
+  return { hostname: moved.hostname, madePrimary: moved.made_primary };
 }
 
 export async function removeCustomDomain(ctx: TenantContext, domainId: string): Promise<void> {

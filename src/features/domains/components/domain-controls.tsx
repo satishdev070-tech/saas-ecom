@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/field";
 import { FormMessage, SubmitButton, fieldErrors } from "@/components/ui/form";
-import { addDomainAction, removeDomainAction, setPrimaryDomainAction, verifyDomainAction } from "../actions";
+import { addDomainAction, moveDomainAction, removeDomainAction, setPrimaryDomainAction, verifyDomainAction } from "../actions";
 
 export function CopyButton({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -125,6 +125,51 @@ export function RemoveDomainButton({ domainId, hostname }: { domainId: string; h
               Cancel
             </Button>
             <SubmitButton variant="danger">Remove domain</SubmitButton>
+          </div>
+        </form>
+      </dialog>
+    </>
+  );
+}
+
+/** Moves a connected domain to another store this seller manages (no DNS change, no downtime). */
+export function MoveDomainButton({ domainId, hostname, stores }: { domainId: string; hostname: string; stores: { id: string; name: string; slug: string }[] }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [state, action] = useActionState(moveDomainAction, null);
+  if (stores.length === 0) return null;
+  return (
+    <>
+      <Button size="sm" variant="secondary" onClick={() => ref.current?.showModal()}>
+        Move to another store
+      </Button>
+      <dialog ref={ref} aria-labelledby={`mv-${domainId}`} className="m-auto w-[min(92vw,480px)] rounded-lg border border-border bg-surface p-0 text-foreground backdrop:bg-black/40">
+        <form action={action} className="space-y-3 p-5">
+          <input type="hidden" name="domainId" value={domainId} />
+          <h2 id={`mv-${domainId}`} className="text-base font-semibold">
+            Move {hostname} to another store
+          </h2>
+          <p className="text-sm text-muted">
+            Visitors to {hostname} will see the store you choose. The domain stays connected and verified: no DNS changes and no downtime. This store keeps its free platform address.
+          </p>
+          <label className="block text-sm font-medium" htmlFor={`mv-target-${domainId}`}>
+            Move to
+          </label>
+          <select id={`mv-target-${domainId}`} name="targetTenantId" required defaultValue="" className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm">
+            <option value="" disabled>
+              Choose a store
+            </option>
+            {stores.map((st) => (
+              <option key={st.id} value={st.id}>
+                {st.name} ({st.slug})
+              </option>
+            ))}
+          </select>
+          <FormMessage state={state && !state.ok ? state : null} />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => ref.current?.close()}>
+              Cancel
+            </Button>
+            <SubmitButton>Move domain</SubmitButton>
           </div>
         </form>
       </dialog>

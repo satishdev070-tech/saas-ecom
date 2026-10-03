@@ -4413,6 +4413,13 @@ export type Database = {
         };
         Returns: undefined;
       };
+      close_own_store: {
+        Args: {
+          p_tenant: string;
+          p_confirm_slug: string;
+        };
+        Returns: undefined;
+      };
       create_tenant: {
         Args: {
           p_name: string;
@@ -4534,6 +4541,19 @@ export type Database = {
           kind: string;
           label: string;
           ref_id: string;
+        }[];
+      };
+      move_custom_domain: {
+        Args: {
+          p_domain: string;
+          p_target: string;
+        };
+        Returns: {
+          source_tenant: string;
+          target_tenant: string;
+          hostname: string;
+          made_primary: boolean;
+          new_domain: string;
         }[];
       };
       platform_create_tenant: {
