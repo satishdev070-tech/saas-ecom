@@ -28,7 +28,8 @@ describe("platformHostAliases", () => {
     expect(platformHostAliases({ VERCEL_URL: "brand.in" })).toEqual([]);
   });
 
-  it("ignores VERCEL_PROJECT_PRODUCTION_URL (it can be a seller's custom domain)", () => {
+  it("trusts VERCEL_PROJECT_PRODUCTION_URL only as a vercel.app name (it can be a seller's custom domain)", () => {
+    expect(platformHostAliases({ VERCEL_PROJECT_PRODUCTION_URL: "saas-ecom-puce.vercel.app" })).toEqual(["saas-ecom-puce.vercel.app"]);
     expect(platformHostAliases({ VERCEL_PROJECT_PRODUCTION_URL: "brand.in" })).toEqual([]);
   });
 

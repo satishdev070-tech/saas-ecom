@@ -65,7 +65,7 @@ Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprock
 ## Platform host aliases / Vercel 404 fix (2026-10-03)
 
 - Bug: on `saas-ecom-puce.vercel.app`, `/` returned the 404 page. `classifyHost` only knew `{root}`/`www.{root}`, so the Vercel host was a `custom-domain`, the proxy rewrote it to `/store/[host]`, the `domains` lookup found no row and the layout called `notFound()`.
-- `src/lib/platform/hosts.ts` `platformHostAliases()`: exact extra platform hosts from `NEXT_PUBLIC_PLATFORM_URL`'s host, `PLATFORM_HOST_ALIASES` (validated in `env/schema.ts`), and `VERCEL_URL`/`VERCEL_BRANCH_URL` (`*.vercel.app` only). `classifyHost`/`decideRoute`/`checkCustomDomain` take the list; aliases can't be added as custom domains.
+- `src/lib/platform/hosts.ts` `platformHostAliases()`: exact extra platform hosts from `NEXT_PUBLIC_PLATFORM_URL`'s host, `PLATFORM_HOST_ALIASES` (validated in `env/schema.ts`), and `VERCEL_URL`/`VERCEL_BRANCH_URL`/`VERCEL_PROJECT_PRODUCTION_URL` (`*.vercel.app` only). `classifyHost`/`decideRoute`/`checkCustomDomain` take the list; aliases can't be added as custom domains.
 - `tenant/directory.ts`: a failed lookup throws `TenantDirectoryError` (5xx, logged with PostgREST code) instead of looking like an unknown host.
 - `.env.example` uses placeholders and lists `APP_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_PLATFORM_URL`, `PLATFORM_HOST_ALIASES`. `docs/DEPLOY_VERCEL.md` covers `*.vercel.app` setup and the Hobby cron trade-off (crons currently daily).
 - Tests: `tests/unit/platform-hosts.test.ts`, `proxy-platform-host.test.ts` (real proxy), `tenant-directory.test.ts`, routing/env additions.

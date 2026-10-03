@@ -33,6 +33,7 @@ function platformAliases(platformUrl: string | undefined): string[] {
     PLATFORM_HOST_ALIASES: process.env.PLATFORM_HOST_ALIASES,
     VERCEL_URL: process.env.VERCEL_URL,
     VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
   });
   return cachedAliases;
 }

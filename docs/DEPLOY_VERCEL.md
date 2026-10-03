@@ -27,7 +27,7 @@ Secrets are never exposed to the browser: only `NEXT_PUBLIC_*` values are.
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Supabase publishable key (RLS protects data) |
 | `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` | yes | **Hostname** (no scheme/port/path), e.g. `paliya.store`. Stores live at `{slug}.{root}`; `{root}` and `www.{root}` serve the platform |
 | `NEXT_PUBLIC_PLATFORM_URL` | recommended (required while on `*.vercel.app`) | **Full URL**, e.g. `https://paliya.store` or `https://saas-ecom-puce.vercel.app`. Links in emails/OAuth; its host is also served as the platform (defaults from the root domain) |
-| `PLATFORM_HOST_ALIASES` | no | Comma-separated **hostnames** that also serve the platform, exact match only (e.g. a second `*.vercel.app` alias). `VERCEL_URL`/`VERCEL_BRANCH_URL` are trusted automatically |
+| `PLATFORM_HOST_ALIASES` | no | Comma-separated **hostnames** that also serve the platform, exact match only (e.g. a second `*.vercel.app` alias). `VERCEL_URL`/`VERCEL_BRANCH_URL`/`VERCEL_PROJECT_PRODUCTION_URL` (`*.vercel.app` only) are trusted automatically |
 | `SUPABASE_SECRET_KEY` | yes | Supabase secret key (server only, bypasses RLS; uses limited by ADR-006) |
 | `APP_SECRET` | yes | 32+ random characters (`openssl rand -base64 48`). Signs cart/session tokens and encrypts stored credentials. **Never rotate casually**: stored credentials become unreadable |
 | `CRON_SECRET` | yes | 24+ random characters. Vercel sends it as `Authorization: Bearer …` to cron routes |
@@ -80,9 +80,12 @@ platform homepage showed "404 — Page not found". Tell the app which host is th
   It must not be the `vercel.app` name: Vercel does not issue wildcard subdomains under
   `vercel.app`, so `{slug}.saas-ecom-puce.vercel.app` stores can't work.
 
-Only exact hostnames are trusted (no `*.vercel.app` wildcard). Preview deployments work through
-Vercel's own `VERCEL_URL`/`VERCEL_BRANCH_URL`. `VERCEL_PROJECT_PRODUCTION_URL` is deliberately not
-used: it is the project's shortest production domain, which can be a seller's custom domain.
+Only exact hostnames are trusted (no `*.vercel.app` wildcard). Vercel's own `VERCEL_URL`,
+`VERCEL_BRANCH_URL` and `VERCEL_PROJECT_PRODUCTION_URL` are trusted automatically, but only when
+they are `*.vercel.app` names, so the production alias works even before `NEXT_PUBLIC_PLATFORM_URL`
+is set. `VERCEL_PROJECT_PRODUCTION_URL` can be a seller's custom domain (it is the project's
+shortest production domain); in that case it is ignored. Still set `NEXT_PUBLIC_PLATFORM_URL`:
+auth emails and OAuth callbacks are built from it.
 Add the Vercel URL to Supabase Auth redirect URLs too (section 3) so sign-in works there.
 
 A failed `domains` lookup (bad `SUPABASE_SECRET_KEY`, network, missing migration) now returns a

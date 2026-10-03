@@ -19,8 +19,8 @@ distinguished by **hostname**, backed by one Supabase project.
 
 `{root}` = `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` (e.g. `paliya.store`; `localhost` in dev).
 Platform aliases are exact hostnames only: the host of `NEXT_PUBLIC_PLATFORM_URL`, each entry of
-`PLATFORM_HOST_ALIASES`, and Vercel's generated `VERCEL_URL` / `VERCEL_BRANCH_URL` (`*.vercel.app`
-only). Any other host, including other `*.vercel.app` names, is a storefront candidate and 404s
+`PLATFORM_HOST_ALIASES`, and Vercel's `VERCEL_URL` / `VERCEL_BRANCH_URL` /
+`VERCEL_PROJECT_PRODUCTION_URL` (`*.vercel.app` only). Any other host, including other `*.vercel.app` names, is a storefront candidate and 404s
 unless it is a verified row in `domains`.
 
 ## 2. Request flow

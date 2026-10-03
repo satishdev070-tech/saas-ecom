@@ -32,6 +32,11 @@ describe("proxy host routing (Vercel production alias)", () => {
     expect(await route({ NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "paliya.store", PLATFORM_HOST_ALIASES: "saas-ecom-puce.vercel.app" }, "saas-ecom-puce.vercel.app")).toBe("next");
   });
 
+  it("serves the Vercel production alias with no extra configuration", async () => {
+    expect(await route({ NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "paliya.store", VERCEL_PROJECT_PRODUCTION_URL: "saas-ecom-puce.vercel.app" }, "saas-ecom-puce.vercel.app")).toBe("next");
+    expect(await route({ NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "paliya.store", VERCEL_PROJECT_PRODUCTION_URL: "www.thepaliya.com" }, "www.thepaliya.com")).toBe("/store/www.thepaliya.com");
+  });
+
   it("keeps store hosts, unknown hosts and reserved hosts on their existing paths", async () => {
     expect(await route(PROD, "acme.paliya.store")).toBe("/store/acme.paliya.store");
     expect(await route(PROD, "www.thepaliya.com", "/products/x")).toBe("/store/www.thepaliya.com/products/x");
