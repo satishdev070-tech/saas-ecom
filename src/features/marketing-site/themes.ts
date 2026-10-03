@@ -58,7 +58,8 @@ export function showcaseThemes(industries: readonly string[], themes: readonly M
 
 /** A representative theme for a business category card. */
 export function themeForIndustry(slug: string, themes: readonly MarketplaceTheme[] = MARKETPLACE_THEMES): MarketplaceTheme | undefined {
-  return themes.find((t) => t.industry === slug);
+  // Prefer a theme with a demo store, so the category card can show it live.
+  return themes.find((t) => t.industry === slug && t.demo) ?? themes.find((t) => t.industry === slug);
 }
 
 export function themeCountFor(slug: string, themes: readonly MarketplaceTheme[] = MARKETPLACE_THEMES): number {

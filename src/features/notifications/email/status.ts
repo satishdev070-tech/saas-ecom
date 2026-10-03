@@ -1,7 +1,7 @@
 import "server-only";
-import { serverEnv } from "@/lib/env/server";
+import { resolveEmailProvider } from "@/lib/email/send";
 
-/** True when RESEND_API_KEY is set (never exposes the key itself). */
-export function emailProviderConfigured(): boolean {
-  return Boolean(serverEnv().RESEND_API_KEY);
+/** True when a Resend API key is saved in the platform console or set in env (never exposes it). */
+export async function emailProviderConfigured(): Promise<boolean> {
+  return Boolean((await resolveEmailProvider()).apiKey);
 }

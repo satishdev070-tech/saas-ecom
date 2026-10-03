@@ -42,6 +42,9 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
     label: "Platform",
     items: [
       { href: "/admin/users", label: "Platform users", permission: "platform.users.manage", icon: "users" },
+      { href: "/admin/branding", label: "Branding & analytics", permission: "platform.settings.manage", icon: "themes" },
+      { href: "/admin/sign-in", label: "Sign-in & checkout", permission: "platform.settings.manage", icon: "users" },
+      { href: "/admin/email", label: "Email (Resend)", permission: "platform.settings.manage", icon: "notifications" },
       { href: "/admin/settings", label: "Settings", permission: "platform.settings.manage", icon: "settings" },
     ],
   },

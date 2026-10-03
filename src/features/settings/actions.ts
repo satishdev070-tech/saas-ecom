@@ -1,5 +1,6 @@
 "use server";
 
+import { checkoutOptionsSchema, toCheckoutSettingsJson } from "@/features/checkout/options";
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { runAction, type ActionResult } from "@/lib/actions/result";
@@ -134,6 +135,19 @@ export async function saveCodSettingsAction(_prev: ActionResult | null, fd: Form
       .eq("tenant_id", ctx.tenantId);
     if (error) throw mapDbError(error);
     await audit({ tenantId: ctx.tenantId, actorUserId: ctx.user.id, action: "settings.cod_updated", entityType: "store", entityId: ctx.tenantId, metadata: { enabled: v.enabled } });
+    revalidateStorefront(ctx.tenantId);
+  });
+  if (result.ok) refresh();
+  return result;
+}
+
+export async function saveCheckoutOptionsAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const result = await runAction("settings.checkout", async () => {
+    const ctx = await settingsCtx();
+    const v = parseInput(checkoutOptionsSchema, formToObject(fd));
+    const { error } = await (await createSupabaseServerClient()).from("stores").update({ checkout_settings: toCheckoutSettingsJson(v) }).eq("tenant_id", ctx.tenantId);
+    if (error) throw mapDbError(error);
+    await audit({ tenantId: ctx.tenantId, actorUserId: ctx.user.id, action: "settings.checkout_updated", entityType: "store", entityId: ctx.tenantId, metadata: { guest_checkout: v.guestCheckout, location_autofill: v.locationAutofill } });
     revalidateStorefront(ctx.tenantId);
   });
   if (result.ok) refresh();

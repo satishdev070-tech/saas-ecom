@@ -3,7 +3,9 @@
 "Continue with Google" appears automatically on the seller login/register pages and on every
 store's shopper login/register pages **as soon as the Google provider is enabled in Supabase**.
 The app reads Supabase's public auth settings (cached for 5 minutes), so there is never a broken
-button.
+button. Platform admins can hide it for sellers or for store customers in **Admin → Sign-in &
+checkout** (`/admin/sign-in`), which also shows the provider status and the URLs to register.
+Signed-out shoppers also see "Check out faster with Google" at checkout.
 
 ## One-time setup
 

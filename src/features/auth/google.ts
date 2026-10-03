@@ -1,6 +1,7 @@
 import "server-only";
 import { publicEnv } from "@/lib/env/public";
 import { logger } from "@/lib/observability/logger";
+import { getPublicPlatformConfig } from "@/features/platform/server/public-config";
 
 /**
  * True when the Google provider is switched on in Supabase Auth (Authentication → Providers).
@@ -22,4 +23,14 @@ export async function googleAuthEnabled(): Promise<boolean> {
     logger.warn("auth.settings_unavailable", { error: err });
     return false;
   }
+}
+
+/**
+ * Whether to show "Continue with Google" to sellers or store customers: the provider must be on
+ * in Supabase Auth AND not switched off for that audience in the platform console (/admin/sign-in).
+ */
+export async function googleSignInAvailable(audience: "sellers" | "shoppers"): Promise<boolean> {
+  const config = await getPublicPlatformConfig();
+  if (!(audience === "sellers" ? config.googleForSellers : config.googleForShoppers)) return false;
+  return googleAuthEnabled();
 }

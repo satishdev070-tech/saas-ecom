@@ -7,7 +7,7 @@ import { parseSettingValue } from "@/features/platform/settings-registry";
 import { integrationPresence } from "@/features/platform/health";
 import { adminNavFor, isAdminNavActive } from "@/features/platform/nav";
 import { PLATFORM_ROLE_PERMISSIONS } from "@/lib/permissions/matrix";
-import { framingHeaders } from "@/lib/security/headers";
+import { framingHeaders, platformFrameOrigins } from "@/lib/security/headers";
 
 describe("store list filters", () => {
   const cat = "8f7c2a1e-3b4d-4e5f-9a6b-7c8d9e0f1a2b";
@@ -131,5 +131,14 @@ describe("framing headers", () => {
     expect(framingHeaders("store", "https://paliya.store/")).toEqual({ "Content-Security-Policy": "frame-ancestors 'self' https://paliya.store" });
     expect(framingHeaders("store", "not a url")).toEqual({ "Content-Security-Policy": "frame-ancestors 'self'" });
     expect(framingHeaders("platform", "https://paliya.store")).toEqual({ "Content-Security-Policy": "frame-ancestors 'self'", "X-Frame-Options": "SAMEORIGIN" });
+  });
+
+  it("lists every exact platform origin (apex, www, aliases) and nothing else", () => {
+    const origins = platformFrameOrigins("https://www.buildbrighten.in", "buildbrighten.in", ["saas-ecom-puce.vercel.app"]);
+    expect(framingHeaders("store", origins)).toEqual({
+      "Content-Security-Policy": "frame-ancestors 'self' https://www.buildbrighten.in https://buildbrighten.in https://saas-ecom-puce.vercel.app",
+    });
+    expect(platformFrameOrigins("http://localhost:3000", "localhost", [])).toEqual(["http://localhost:3000"]);
+    expect(framingHeaders("store", ["javascript:alert(1)", "*.vercel.app"])).toEqual({ "Content-Security-Policy": "frame-ancestors 'self'" });
   });
 });

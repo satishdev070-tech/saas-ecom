@@ -10,6 +10,7 @@ import type { CheckoutSummary } from "@/features/checkout/summary";
 import { INDIAN_STATES } from "@/features/customer-account/address";
 import { formatMoney } from "@/lib/money";
 import { OrderSummary } from "./order-summary";
+import { UseMyLocation } from "@/features/geo/components/use-my-location";
 
 type Prefill = { email: string; phone: string; name: string; line1: string; line2: string; landmark: string; city: string; state: string; postalCode: string; acceptsMarketing: boolean };
 
@@ -30,7 +31,7 @@ function Field({ label, name, errors, className = "", ...rest }: { label: string
   );
 }
 
-export function CheckoutForm({ initial, prefill, codOffered, onlineOffered, signedIn, items = [], whatsappOptInStoreName = null }: { initial: CheckoutSummary; prefill: Prefill; codOffered: boolean; onlineOffered: boolean; signedIn: boolean; items?: AnalyticsItem[]; whatsappOptInStoreName?: string | null }) {
+export function CheckoutForm({ initial, prefill, codOffered, onlineOffered, signedIn, items = [], whatsappOptInStoreName = null, locationAutofill = false }: { initial: CheckoutSummary; prefill: Prefill; codOffered: boolean; onlineOffered: boolean; signedIn: boolean; items?: AnalyticsItem[]; whatsappOptInStoreName?: string | null; locationAutofill?: boolean }) {
   const [summary, setSummary] = useState(initial);
   const [pin, setPin] = useState(prefill.postalCode);
   const [rateId, setRateId] = useState<string | undefined>(initial.shipping.selectedId ?? undefined);
@@ -104,6 +105,14 @@ export function CheckoutForm({ initial, prefill, codOffered, onlineOffered, sign
 
         <fieldset className="space-y-4">
           <legend className="sf-heading mb-2 text-2xl">Delivery address</legend>
+          {locationAutofill ? (
+            <UseMyLocation
+              onPostalCode={(v) => {
+                setPin(v);
+                requote({ postalCode: v });
+              }}
+            />
+          ) : null}
           <div className="grid gap-4 @[40rem]:grid-cols-2">
             <Field label="Full name" name="name" autoComplete="name" required defaultValue={prefill.name} errors={errors} className="@[40rem]:col-span-2" />
             <Field label="Phone for delivery" name="phone" type="tel" autoComplete="tel" required defaultValue={prefill.phone} errors={errors} />

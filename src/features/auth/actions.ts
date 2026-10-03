@@ -1,5 +1,6 @@
 "use server";
 
+import { getPublicPlatformConfig } from "@/features/platform/server/public-config";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { runAction, type ActionResult } from "@/lib/actions/result";
@@ -100,6 +101,7 @@ export async function signOutAction(fd?: FormData): Promise<void> {
 export async function googleSignInAction(fd: FormData): Promise<void> {
   const next = safeRedirectPath(typeof fd.get("next") === "string" ? (fd.get("next") as string) : "", "/dashboard");
   await rateLimit("login:ip", await clientIpKey(), 20, 600);
+  if (!(await getPublicPlatformConfig()).googleForSellers) redirect(`${SELLER_LOGIN_PATH}?error=google`);
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",

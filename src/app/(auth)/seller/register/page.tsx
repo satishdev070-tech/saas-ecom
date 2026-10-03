@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { SignUpForm } from "@/features/auth/forms";
 import { googleSignInAction } from "@/features/auth/actions";
 import { GoogleButton, OrDivider } from "@/components/auth/google-button";
-import { googleAuthEnabled } from "@/features/auth/google";
+import { googleSignInAvailable } from "@/features/auth/google";
 import { getSessionUser } from "@/lib/auth/session";
 import { landingPathFor } from "@/lib/auth/landing";
 import { safeRedirectPath } from "@/lib/http/safe-redirect";
@@ -34,7 +34,7 @@ export default async function SellerRegisterPage({ searchParams }: PageProps<"/s
     redirect(next || (landing === "/onboarding" ? onboarding : landing));
   }
 
-  const google = await googleAuthEnabled();
+  const google = await googleSignInAvailable("sellers");
   const trial = maxTrialDays(plans);
   const themeName = theme ? findTheme(theme)?.name : null;
   const planName = plan ? findPlan(plans, plan)?.name : null;

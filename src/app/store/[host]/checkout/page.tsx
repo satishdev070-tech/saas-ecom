@@ -8,6 +8,10 @@ import { loadPaymentOptions } from "@/features/checkout/payment-options";
 import { getStoreCustomer } from "@/features/customer-account/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CheckoutForm } from "@/features/checkout/components/checkout-form";
+import { getCheckoutOptions } from "@/features/checkout/server/options";
+import { googleSignInAvailable } from "@/features/auth/google";
+import { GoogleButton } from "@/components/auth/google-button";
+import { storeGoogleSignInAction } from "@/features/customer-account/actions";
 import { TrackEvent } from "@/features/tracking/components/track-event";
 import type { AnalyticsItem } from "@/features/tracking/items";
 
@@ -19,7 +23,8 @@ export default async function CheckoutPage({ params }: PageProps<"/store/[host]/
   const tenantId = sf.tenant.tenantId;
   const view = await getCartView(tenantId);
   if (!view.lines.length) redirect("/cart");
-  const customer = await getStoreCustomer(tenantId);
+  const [customer, options] = await Promise.all([getStoreCustomer(tenantId), getCheckoutOptions(tenantId)]);
+  if (!customer && !options.guestCheckout) redirect("/account/login?next=/checkout&checkout=1");
   let address: { name: string; phone: string; line1: string; line2: string | null; landmark: string | null; city: string; state: string; postal_code: string } | null = null;
   if (customer) {
     const supabase = await createSupabaseServerClient();
@@ -43,10 +48,17 @@ export default async function CheckoutPage({ params }: PageProps<"/store/[host]/
     <div className="sf-container sf-section">
       <TrackEvent name="begin_checkout" params={{ value: quote.data.grandTotal / 100, items, ...(quote.data.discount?.code ? { coupon: quote.data.discount.code } : {}) }} />
       <h1 className="sf-heading mb-8 text-4xl">Checkout</h1>
+      {!customer && (await googleSignInAvailable("shoppers")) ? (
+        <div className="mb-8 flex max-w-xl flex-wrap items-center gap-x-4 gap-y-2">
+          <GoogleButton action={storeGoogleSignInAction} next="/checkout" label="Check out faster with Google" className="w-full sm:w-auto" />
+          <p className="sf-muted text-sm">{options.guestCheckout ? "Or continue below as a guest." : null}</p>
+        </div>
+      ) : null}
       <CheckoutForm
         items={items}
         initial={quote.data}
         signedIn={Boolean(customer)}
+        locationAutofill={options.locationAutofill}
         whatsappOptInStoreName={(await whatsappOptInAvailable(tenantId)) ? sf.store.name : null}
         codOffered={payment.codOffered}
         onlineOffered={payment.online !== null}

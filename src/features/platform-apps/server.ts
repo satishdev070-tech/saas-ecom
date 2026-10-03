@@ -84,8 +84,10 @@ export async function saveAppCredential(ctx: PlatformContext, input: SaveAppCred
   assertPlatformPermission(ctx, "platform.settings.manage");
   const p = input.provider;
   const clientId = needsClientId(p) ? input.clientId : undefined;
-  if (!clientId && !input.secret) throw new AppError("VALIDATION", { fieldErrors: { _form: ["Enter at least one value to save."] } });
+  const from = p === "resend" ? input.from : undefined;
+  if (!clientId && !input.secret && !from) throw new AppError("VALIDATION", { fieldErrors: { _form: ["Enter at least one value to save."] } });
   const before = await freshRow(p);
+  const extra = from ? { ...cleanExtra(p, before?.extra), from } : (before?.extra ?? {});
   const { error } = await createSupabaseAdminClient()
     .from("platform_app_credentials")
     .upsert(
@@ -93,7 +95,7 @@ export async function saveAppCredential(ctx: PlatformContext, input: SaveAppCred
         provider: p,
         client_id: clientId ?? before?.client_id ?? null,
         secret_ciphertext: input.secret ? encryptSecret(input.secret, PURPOSE) : (before?.secret_ciphertext ?? null),
-        extra: (before?.extra ?? {}) as Json,
+        extra: extra as Json,
         updated_by: ctx.user.id,
         updated_at: new Date().toISOString(),
       },
@@ -101,7 +103,7 @@ export async function saveAppCredential(ctx: PlatformContext, input: SaveAppCred
     );
   if (error) throw new AppError("INTERNAL", { cause: error });
   // Values are never audited, only which fields changed.
-  await platformAudit(ctx, "platform_app_credential.saved", p, { client_id_changed: Boolean(clientId && clientId !== before?.client_id), secret_changed: Boolean(input.secret) });
+  await platformAudit(ctx, "platform_app_credential.saved", p, { client_id_changed: Boolean(clientId && clientId !== before?.client_id), secret_changed: Boolean(input.secret), from_changed: Boolean(from && from !== cleanExtra(p, before?.extra).from) });
 }
 
 /** Deletes the saved row; the provider falls back to env (if set) or becomes unconfigured. */
@@ -122,4 +124,12 @@ export async function rotateMetaWebhookVerifyToken(ctx: PlatformContext): Promis
     .upsert({ provider: "meta", client_id: before?.client_id ?? null, secret_ciphertext: before?.secret_ciphertext ?? null, extra, updated_by: ctx.user.id, updated_at: new Date().toISOString() }, { onConflict: "provider" });
   if (error) throw new AppError("INTERNAL", { cause: error });
   await platformAudit(ctx, "platform_app_credential.verify_token_rotated", "meta", { had_token: Boolean(cleanExtra("meta", before?.extra).webhookVerifyToken) });
+}
+
+/** Resend settings for /admin/email: non-secret values and a masked key hint only. */
+export async function getEmailProviderStatus(ctx: PlatformContext): Promise<AppCredentialStatus & { from: string | null; dbFrom: string | null }> {
+  assertPlatformPermission(ctx, "platform.settings.manage");
+  const [cred, row] = await Promise.all([getAppCredential("resend"), loadRow("resend")]);
+  const dbFrom = cleanExtra("resend", row?.extra).from ?? null;
+  return { ...toStatus("resend", cred, row), from: cred?.extra.from ?? dbFrom ?? serverEnv().EMAIL_FROM, dbFrom };
 }

@@ -39,8 +39,8 @@ export default async function ThemeDetailPage({ params }: PageProps<"/themes/[ke
           </Link>
           <div className="mt-8 grid items-start gap-12 lg:grid-cols-[1.25fr_1fr]">
             <div className="pb-8">
-              <ThemeDevicePreview theme={t} size="large" />
-              <p className="mt-12 text-sm text-muted">Preview drawn from the theme&apos;s own colours, fonts and layout. Your text, images and products replace the samples.</p>
+              <ThemeDevicePreview theme={t} previewUrl={previewUrl} size="large" eager />
+              <p className="mt-12 text-sm text-muted">{previewUrl ? "Live demo store shown at desktop and phone size, with sample products." : "Preview drawn from the theme's own colours, fonts and layout."} Your text, images and products replace the samples.</p>
             </div>
             <div>
               <div className="flex flex-wrap gap-2 text-xs font-semibold">

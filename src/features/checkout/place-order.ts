@@ -13,6 +13,7 @@ import { requireCart, updateCart } from "@/features/cart/service";
 import { clearCartCookie } from "@/features/cart/token";
 import { getStoreCustomer, type StoreCustomer } from "@/features/customer-account/session";
 import { toOrderAddress } from "@/features/customer-account/address";
+import { getCheckoutOptions } from "./server/options";
 import { getPaymentProvider } from "@/features/payments/provider";
 import { afterOrderConfirmed } from "./post-order";
 import { recordWhatsAppOptIn } from "@/features/notifications/whatsapp/consent";
@@ -146,6 +147,9 @@ export async function placeOrder(tenant: ResolvedTenant, input: CheckoutInput): 
   if (lines.length === 0) throw new AppError("VALIDATION", { message: "Your cart is empty.", fieldErrors: { _form: ["Your cart is empty."] } });
 
   const customer = await getStoreCustomer(tenantId);
+  if (!customer && !(await getCheckoutOptions(tenantId)).guestCheckout) {
+    throw new AppError("UNAUTHENTICATED", { message: "Please sign in to check out.", fieldErrors: { _form: ["Please sign in to check out. This store doesn't offer guest checkout."] } });
+  }
   const quote = await quoteCart(tenantId, cart, lines, { pincode: input.postalCode, shippingRateId: input.shippingRateId ?? null, paymentMethod: input.paymentMethod });
   const pricing = quote.pricing;
 

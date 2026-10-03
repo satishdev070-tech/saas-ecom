@@ -144,7 +144,7 @@ export default async function NotificationsPage() {
       <h2 className="pt-2 text-h3 font-semibold">Email</h2>
       <p className="text-small text-muted">Emails sent to shoppers. Edit the wording; {"{{placeholders}}"} are filled in automatically.</p>
       <Card title="Which emails to send">
-        <EmailPreferencesForm prefs={emailPrefs} providerConfigured={emailProviderConfigured()} />
+        <EmailPreferencesForm prefs={emailPrefs} providerConfigured={await emailProviderConfigured()} />
       </Card>
       {TEMPLATE_KEYS.map((k) => {
         const s = saved.find((t) => t.key === k && t.channel === "email");

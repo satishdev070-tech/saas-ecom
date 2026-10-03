@@ -15,6 +15,7 @@ const GROUPS: { label: string; items: { href: string; label: string; permission:
     label: "Commerce",
     items: [
       { href: "/dashboard/settings/payments", label: "Payments", permission: "payments.manage" },
+      { href: "/dashboard/settings/checkout", label: "Checkout", permission: "store.read" },
       { href: "/dashboard/settings/shipping", label: "Shipping & COD", permission: "store.read" },
       { href: "/dashboard/settings/taxes", label: "Taxes", permission: "settings.write" },
     ],

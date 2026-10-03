@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { platformIconMetadata } from "@/features/platform/server/public-config";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CheckCircle2, CreditCard, Eye, Package, Rocket, Truck } from "lucide-react";
@@ -17,7 +18,9 @@ import { listOwnedStores, requestedChoices, type OnboardingStore } from "@/featu
 import { onboardingHref, previousStep, resolveStep, UUID_RE } from "@/features/onboarding/steps";
 import { PreviewStoreButton } from "@/features/stores/components/launch-controls";
 
-export const metadata: Metadata = { title: "Set up your store", robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: "Set up your store", robots: { index: false, follow: false }, ...(await platformIconMetadata()) };
+}
 
 const dateFmt = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" });
 
