@@ -62,6 +62,12 @@ Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprock
 - **Data:** seed fixed (GoTrue token columns, idempotent inserts); `scripts/dev/demo-media/run.mts` generates original demo imagery and publishes the demo theme.
 - **Tests:** `zeroFillDays`; admin stats RPC; shopper↔shopper and shopper→seller/platform isolation.
 
+## Root domain switch to buildbrighten.in (2026-10-03)
+
+- Production returned a plain 500 on every host: `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` was not a bare hostname, so `publicEnv()` threw `EnvValidationError` in the proxy. The schema now reduces a pasted URL (`https://www.example.in/`) to the bare root; ports and non-hostnames are still rejected.
+- `supabase/dev/move-platform-root.sql`: idempotent ops script adding `{slug}.{new root}` platform-subdomain rows (and moving the primary off old platform subdomains; custom primaries untouched). Tested on the local test DB.
+- Tests: env normalisation, proxy routing for `www.buildbrighten.in` / `{slug}.buildbrighten.in`.
+
 ## Platform host aliases / Vercel 404 fix (2026-10-03)
 
 - Bug: on `saas-ecom-puce.vercel.app`, `/` returned the 404 page. `classifyHost` only knew `{root}`/`www.{root}`, so the Vercel host was a `custom-domain`, the proxy rewrote it to `/store/[host]`, the `domains` lookup found no row and the layout called `notFound()`.

@@ -49,4 +49,16 @@ describe("proxy host routing (Vercel production alias)", () => {
     expect(await route({ NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "localhost" }, "localhost:3000")).toBe("next");
     expect(await route({ NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "localhost" }, "acme.localhost:3000")).toBe("/store/acme.localhost");
   });
+
+  it("serves buildbrighten.in even when the root domain was pasted as a URL", async () => {
+    const env = { NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN: "https://www.buildbrighten.in/", NEXT_PUBLIC_PLATFORM_URL: "https://www.buildbrighten.in" };
+    expect(await route(env, "www.buildbrighten.in")).toBe("next");
+    expect(await route(env, "buildbrighten.in")).toBe("next");
+    expect(await route(env, "the-paliya-234-sample.buildbrighten.in")).toBe("/store/the-paliya-234-sample.buildbrighten.in");
+    expect(await route(env, "the-paliya-234-sample.buildbrighten.in", "/products/kurta")).toBe("/store/the-paliya-234-sample.buildbrighten.in/products/kurta");
+    expect(await route(env, "the-paliya-234-sample.buildbrighten.in", "/dashboard")).toBe("/_unknown-host");
+    // Two-level names are never stores (and a *.root wildcard certificate can't cover them).
+    expect(await route(env, "www.the-paliya-234-sample.buildbrighten.in")).toBe("/_unknown-host");
+  });
 });
+

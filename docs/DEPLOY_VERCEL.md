@@ -68,6 +68,26 @@ a **wildcard domain** on the Vercel project:
 The proxy (`src/proxy.ts`) reads the `Host` header, classifies it and rewrites store hosts to
 `/store/[host]`. A store subdomain resolves only through the `domains` table (`status = 'verified'`).
 
+### Switching the root domain (e.g. to `buildbrighten.in`)
+
+1. Vercel → Settings → Domains: add `buildbrighten.in`, `www.buildbrighten.in` and
+   `*.buildbrighten.in` (wildcard needs Vercel nameservers, see step 2 above).
+2. Environment variables (Production), then **redeploy** (`NEXT_PUBLIC_*` are baked in at build):
+   - `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN=buildbrighten.in` (bare hostname; a pasted
+     `https://www.buildbrighten.in/` is reduced to `buildbrighten.in`, but ports are rejected)
+   - `NEXT_PUBLIC_PLATFORM_URL=https://www.buildbrighten.in`
+3. Run `supabase/dev/move-platform-root.sql` once in the Supabase SQL editor (set `new_root` at
+   the top). It adds a verified `{slug}.buildbrighten.in` row for every store and makes it the
+   canonical host unless the store's primary is a custom domain. Old rows stay; nothing is deleted.
+4. Supabase Auth → URL Configuration: Site URL `https://www.buildbrighten.in`, redirect URLs
+   `https://www.buildbrighten.in/**` and `https://*.buildbrighten.in/**`.
+
+Stores live at `{slug}.buildbrighten.in` (one level). `www.{slug}.buildbrighten.in` is not a store
+address: the `*.buildbrighten.in` certificate does not cover two-level names, and the proxy 404s them.
+
+An invalid `NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN` makes the proxy throw `EnvValidationError` and every
+host (including `*.vercel.app`) returns a plain "Internal Server Error". Check Vercel → Logs.
+
 ### Before the real domain is attached (`*.vercel.app` only)
 
 Any host that is not the platform is treated as a possible store domain. So with only the Vercel
