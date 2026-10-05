@@ -13,6 +13,11 @@ not needed on Vercel.
 2. Pick the **Pro** plan for production. Hobby only allows daily cron jobs (the deploy fails with
    the `vercel.json` below) and limits a project to 50 custom domains.
 3. Region: pick the one closest to your Supabase region (Mumbai `bom1` for an `ap-south-1` database).
+   **This matters most for speed.** Every store page makes several database queries; if the
+   functions run in Washington (`iad1`, Vercel's default) and the database is in Mumbai, each one
+   crosses the world and Time to First Byte reaches ~3 s. Check the database region in Supabase →
+   Project Settings → General. `vercel.json` pins functions to `bom1` (Mumbai) because the
+   production database is in `ap-south-1`; change `regions` there if the database moves.
 4. Add the environment variables below (Settings → Environment Variables, **Production** and
    **Preview**), then deploy.
 

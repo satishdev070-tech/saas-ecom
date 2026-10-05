@@ -134,15 +134,29 @@ export function Carousel({
     [loop, count, position, jumpTo],
   );
 
+  // Autoplay waits for the page to finish loading: rotating while the first paint is still in
+  // progress makes a lazily loaded later slide the Largest Contentful Paint (slow LCP scores).
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (!autoplayMs) return;
+    if (document.readyState === "complete") {
+      const t = window.setTimeout(() => setLoaded(true), 0);
+      return () => window.clearTimeout(t);
+    }
+    const onLoad = () => setLoaded(true);
+    window.addEventListener("load", onLoad, { once: true });
+    return () => window.removeEventListener("load", onLoad);
+  }, [autoplayMs]);
+
   // Autoplay (hero): respects hover/focus, hidden tabs and reduced motion.
   useEffect(() => {
-    if (!autoplayMs || count < 2 || paused) return;
+    if (!autoplayMs || count < 2 || paused || !loaded) return;
     if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const t = window.setInterval(() => {
       if (document.visibilityState === "visible") step(1);
     }, autoplayMs);
     return () => window.clearInterval(t);
-  }, [autoplayMs, count, paused, step]);
+  }, [autoplayMs, count, paused, step, loaded]);
 
   const onKey = (e: KeyboardEvent) => {
     if (e.key === "ArrowRight") {
