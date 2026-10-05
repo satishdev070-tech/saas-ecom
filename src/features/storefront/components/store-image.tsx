@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { assetUrl } from "@/lib/storage/assets";
 
 const optimizerUrl = (src: string, w: number) => `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=75`;
@@ -32,6 +32,44 @@ export function StoreImage({
   // the browser then reuses a different candidate width (measurable pixel change on live stores).
   if (natural) return <Image src={src} alt={alt} width={0} height={0} sizes={sizes} priority={priority} className={`block h-auto w-full ${className}`} />;
   return <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className={`object-cover ${className}`} />;
+}
+
+/**
+ * Art-directed image: a separate phone image below 48rem (the storefront's mobile breakpoint,
+ * same as .sf-hide-mobile / .sf-hide-desktop). Rendered as one <picture>, so each device downloads
+ * and (for the LCP slide) preloads only its own file, instead of two CSS-hidden <img>s that both
+ * load. Falls back to StoreImage when either path is missing.
+ */
+export function StoreArtImage({
+  path,
+  mobilePath,
+  alt,
+  sizes,
+  priority = false,
+  natural = false,
+}: {
+  path: string | null | undefined;
+  mobilePath: string | null | undefined;
+  alt: string;
+  sizes: string;
+  priority?: boolean;
+  natural?: boolean;
+}) {
+  const desktop = assetUrl(path);
+  const mobile = assetUrl(mobilePath);
+  if (!desktop || !mobile) return <StoreImage path={path ?? mobilePath} alt={alt} sizes={sizes} priority={priority} natural={natural} />;
+  // getImageProps ignores `priority`; the LCP slide gets an eager, high-priority fetch instead.
+  const common = { alt, sizes, ...(priority ? { loading: "eager" as const, fetchPriority: "high" as const } : {}), ...(natural ? { width: 0, height: 0 } : { fill: true }) };
+  const { props: d } = getImageProps({ ...common, src: desktop });
+  const { props: m } = getImageProps({ ...common, src: mobile });
+  return (
+    <picture className={natural ? "block" : "absolute inset-0"}>
+      <source media="(max-width: 47.99rem)" srcSet={m.srcSet} sizes={m.sizes} />
+      <source media="(min-width: 48rem)" srcSet={d.srcSet} sizes={d.sizes} />
+      {/* eslint-disable-next-line jsx-a11y/alt-text -- alt is in the spread props */}
+      <img {...d} className={natural ? "block h-auto w-full" : "object-cover"} />
+    </picture>
+  );
 }
 
 /**

@@ -11,7 +11,7 @@ import { paths } from "@/features/storefront/urls";
 import { ProductCard, ProductGrid as Grid, ProductRow } from "@/features/storefront/components/product-card";
 import { CardQuickAdd } from "@/features/storefront/components/card-actions";
 import { Price } from "@/features/storefront/components/price";
-import { StoreImage, storeImageSrc } from "@/features/storefront/components/store-image";
+import { StoreArtImage, StoreImage, storeImageSrc } from "@/features/storefront/components/store-image";
 import { Stars } from "@/features/storefront/components/price";
 import { NewsletterForm } from "@/features/storefront/components/islands";
 import { VideoShop as VideoShopPlayer, type VideoShopItem } from "@/features/storefront/components/video-shop";
@@ -129,16 +129,10 @@ async function Hero({ s }: P<"Hero">) {
   const banner = s.height === "banner";
   const h = s.height === "large" ? "min-h-[78svh]" : s.height === "medium" ? "min-h-[60svh]" : banner ? "" : "min-h-[44svh]";
   // Banner mode: the image keeps its own proportions (never cropped), so text designed into it stays visible.
+  // Separate phone images use one <picture> (StoreArtImage): each device downloads only its own file.
   const bannerMedia = (sl: (typeof s.slides)[number], i: number) =>
     sl.mobileImagePath ? (
-      <>
-        <div className="sf-hide-mobile">
-          <StoreImage path={sl.imagePath} alt={sl.alt} sizes="100vw" priority={i === 0} natural />
-        </div>
-        <div className="sf-hide-desktop">
-          <StoreImage path={sl.mobileImagePath} alt={sl.alt} sizes="100vw" priority={i === 0} natural />
-        </div>
-      </>
+      <StoreArtImage path={sl.imagePath} mobilePath={sl.mobileImagePath} alt={sl.alt} sizes="100vw" priority={i === 0} natural />
     ) : (
       <StoreImage path={sl.imagePath} alt={sl.alt} sizes="100vw" priority={i === 0} natural />
     );
@@ -146,14 +140,7 @@ async function Hero({ s }: P<"Hero">) {
     banner ? (
       bannerMedia(sl, i)
     ) : sl.mobileImagePath ? (
-      <>
-        <div className="sf-hide-mobile absolute inset-0">
-          <StoreImage path={sl.imagePath} alt={sl.alt} sizes="100vw" priority={i === 0} />
-        </div>
-        <div className="sf-hide-desktop absolute inset-0">
-          <StoreImage path={sl.mobileImagePath} alt={sl.alt} sizes="100vw" priority={i === 0} />
-        </div>
-      </>
+      <StoreArtImage path={sl.imagePath} mobilePath={sl.mobileImagePath} alt={sl.alt} sizes="100vw" priority={i === 0} />
     ) : (
       <StoreImage path={sl.imagePath} alt={sl.alt} sizes="100vw" priority={i === 0} />
     );
