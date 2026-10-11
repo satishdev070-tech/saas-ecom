@@ -278,11 +278,30 @@ export async function platformIntegrationOverview() {
   });
 }
 
-/** Primary verified hostname of a store (webhook URLs are per store host). RLS-scoped read. */
-export async function storePrimaryHost(tenantId: string): Promise<string | null> {
+/**
+ * Pure ordering of a store's verified hostnames: hosts that can't be reached from the internet
+ * (`*.localhost`, left over from local seeds) are dropped unless the platform itself runs on
+ * localhost; then custom domains first, then the primary flag, then platform subdomains on the
+ * current root (old roots last).
+ */
+export function rankStoreHosts(rows: { hostname: string; is_primary: boolean; type?: string | null }[], rootDomain: string): string[] {
+  const local = (h: string) => h === "localhost" || h.endsWith(".localhost");
+  const usable = rootDomain === "localhost" ? rows : rows.filter((r) => !local(r.hostname));
+  const score = (r: (typeof rows)[number]) => (r.type === "custom" ? 0 : 4) + (r.is_primary ? 0 : 2) + (r.hostname.endsWith(`.${rootDomain}`) || r.type === "custom" ? 0 : 1);
+  return [...usable].sort((a, b) => score(a) - score(b) || a.hostname.localeCompare(b.hostname)).map((r) => r.hostname);
+}
+
+/** Every verified hostname that serves this store, best first (RLS-scoped read). */
+export async function storeHosts(tenantId: string): Promise<string[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase/server");
-  const { data } = await (await createSupabaseServerClient()).from("domains").select("hostname, is_primary").eq("tenant_id", tenantId).eq("status", "verified").order("is_primary", { ascending: false }).limit(1);
-  return data?.[0]?.hostname ?? null;
+  const { publicEnv } = await import("@/lib/env/public");
+  const { data } = await (await createSupabaseServerClient()).from("domains").select("hostname, is_primary, type").eq("tenant_id", tenantId).eq("status", "verified").limit(20);
+  return rankStoreHosts(data ?? [], publicEnv().NEXT_PUBLIC_PLATFORM_ROOT_DOMAIN);
+}
+
+/** Best public hostname of a store (webhook URLs, canonical links). */
+export async function storePrimaryHost(tenantId: string): Promise<string | null> {
+  return (await storeHosts(tenantId))[0] ?? null;
 }
 
 /** Summaries trimmed to what the browser may see (already secret-free). */

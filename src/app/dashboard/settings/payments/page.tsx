@@ -3,7 +3,8 @@ import Link from "next/link";
 import { can, requireTenantPermission } from "@/lib/tenant/membership";
 import { storeOrigin } from "@/lib/platform/urls";
 import { PageHeader } from "@/components/ui/layout";
-import { listIntegrationSummaries, storePrimaryHost, toCardData } from "@/features/integrations/server/store";
+import { listIntegrationSummaries, storeHosts, toCardData } from "@/features/integrations/server/store";
+import { onlinePaymentProviders, type OnlineProviderId } from "@/features/payments/credentials";
 import { IntegrationCard } from "@/features/integrations/components/integration-card";
 import type { ProviderId } from "@/features/integrations/registry";
 
@@ -19,9 +20,17 @@ const PROVIDER_NAMES: Partial<Record<ProviderId, string>> = { razorpay: "Razorpa
 
 export default async function PaymentsPage() {
   const ctx = await requireTenantPermission("payments.manage");
-  const [summaries, host] = await Promise.all([listIntegrationSummaries(ctx.tenantId, "payment"), storePrimaryHost(ctx.tenantId)]);
+  const [summaries, hosts, liveAtCheckout] = await Promise.all([
+    listIntegrationSummaries(ctx.tenantId, "payment"),
+    storeHosts(ctx.tenantId),
+    // Exactly what checkout uses, so this page can't disagree with the storefront.
+    onlinePaymentProviders(ctx.tenantId).catch((): OnlineProviderId[] => []),
+  ]);
+  const host = hosts[0] ?? null;
   const manage = can(ctx, "payments.manage");
-  const connected = summaries.filter((s) => s.enabled && s.status === "connected" && s.featureEnabled).length;
+  const live = liveAtCheckout.filter((p): p is "razorpay" | "cashfree" | "payu" => p !== "manual");
+  const connected = live.length;
+  const otherStores = ctx.memberships.filter((m) => m.tenantId !== ctx.tenantId);
   return (
     <div className="space-y-6">
       <PageHeader
@@ -39,7 +48,7 @@ export default async function PaymentsPage() {
       <div role="status" className={`rounded-md border p-4 text-small ${connected ? "border-success/30 bg-success/10" : "border-warning/30 bg-warning/10"}`}>
         {connected ? (
           <p>
-            <span className="font-medium">Online payment is live at checkout</span> via {summaries.filter((s) => s.enabled && s.status === "connected" && s.featureEnabled).map((s) => PROVIDER_NAMES[s.provider] ?? s.provider).join(", ") || "—"}.{" "}
+            <span className="font-medium">Online payment is live at checkout</span> of <span className="font-medium">{ctx.tenantName}</span> via {live.map((p) => PROVIDER_NAMES[p] ?? p).join(", ")}.{" "}
             <Link href="/dashboard/payments" className="text-accent hover:underline">
               View transactions
             </Link>
@@ -55,6 +64,29 @@ export default async function PaymentsPage() {
           </>
         )}
         {summaries.some((s) => s.enabled && !s.featureEnabled) ? <p className="mt-2 text-warning">A gateway is switched on but not included in your plan, so shoppers can&apos;t see it. Contact support to upgrade.</p> : null}
+        <p className="mt-2 text-muted">
+          {hosts.length ? (
+            <>
+              This applies to checkout on{" "}
+              {hosts.map((h, i) => (
+                <span key={h}>
+                  {i ? ", " : ""}
+                  <a href={`${storeOrigin(h)}/checkout`} target="_blank" rel="noopener noreferrer" className="font-medium text-foreground underline underline-offset-2">
+                    {h}
+                  </a>
+                </span>
+              ))}{" "}
+              only.
+            </>
+          ) : (
+            "This store has no verified web address yet, so shoppers can't reach its checkout."
+          )}
+        </p>
+        {otherStores.length ? (
+          <p className="mt-2 text-warning">
+            Gateway keys are saved per store. You also manage {otherStores.map((m) => m.tenantName).join(", ")}. If your website shows only Cash on delivery, that website probably belongs to another store: switch stores from the account menu (top right) and connect the gateway there too.
+          </p>
+        ) : null}
       </div>
       {summaries.map((s) => (
         <IntegrationCard
