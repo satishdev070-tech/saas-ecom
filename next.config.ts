@@ -27,6 +27,11 @@ const nextConfig: NextConfig = {
     // Optimization "transformations" quota (the Hobby plan was paused for exceeding it), so:
     // WebP only (AVIF doubled the count for a small size gain) and a short width ladder
     // (each width is another transformation per image; the browser picks the next size up).
+    // Store images don't use Vercel Image Optimization at all: the custom loader serves pre-sized
+    // WebP copies from Supabase Storage (see src/lib/images/loader.ts, /api/img). The settings
+    // below still decide which widths go into each <img srcset>.
+    loader: "custom",
+    loaderFile: "./src/lib/images/loader.ts",
     formats: ["image/webp"],
     deviceSizes: [640, 1080, 1920],
     // Small slots (thumbnails, cards in narrow grids) and the 384px logo (storeImageSrc).

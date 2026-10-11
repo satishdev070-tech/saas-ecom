@@ -42,6 +42,8 @@ Inbound `x-paliya-host` headers from clients are stripped.
 
 **Additions (2026-10-02, social suite):** the secret-key client is also used for (1) `platform_app_credentials` (platform permission check first; ciphertext only), (2) inbox webhooks writing `social_conversations`/`social_messages` after the Meta `X-Hub-Signature-256` check, with the store resolved from a connected integration, (3) `ai_generations` logging and (4) `gbp_reviews` sync, both after a `marketing.write` check with a server-resolved tenant.
 
+**Addition (2026-10-11, image variants):** `/api/img` (lib/storage/variants-server.ts) uses the secret-key client for one write only: a derived WebP copy (`{original}__w{480|960|1600}.webp`) next to an EXISTING public original in `store-assets`, when that copy is missing. It never reads private data, never overwrites originals, and validates the path (`tenant/{uuid}/…`, raster extension) and width (fixed ladder). New uploads make their copies with the uploader's own client (RLS). Reason: store images are served pre-sized from Supabase Storage instead of Vercel Image Optimization, whose per-transformation quota paused the platform.
+
 ## ADR-007 — Edge → origin trust via HMAC-signed host · Accepted
 The Worker forwards the original hostname with `x-paliya-edge-{host,ts,sig}` where `sig = HMAC-SHA256(EDGE_SHARED_SECRET, host + "\n" + ts)`.
 The proxy accepts it only if the signature is valid and ≤ 300 s old; otherwise it falls back to the literal Host header. Anyone hitting the origin directly cannot claim a tenant host.

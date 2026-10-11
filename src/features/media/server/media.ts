@@ -1,4 +1,6 @@
 import "server-only";
+import { createVariantsOnUpload } from "@/lib/storage/variants-server";
+import { variantPathsFor } from "@/lib/storage/variants";
 import { randomUUID } from "node:crypto";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mapDbError } from "@/lib/supabase/errors";
@@ -89,6 +91,8 @@ async function verifyStoredImage(path: string): Promise<{ mime: string; bytes: n
     await supabase.storage.from(STORE_ASSETS_BUCKET).remove([path]);
     throw new AppError("VALIDATION", { message: "That file isn't a valid image, so it was discarded." });
   }
+  // Pre-sized WebP copies for the storefront (best effort; /api/img makes any that are missing).
+  await createVariantsOnUpload(supabase, path, buf);
   return { mime: kind.mime, bytes: buf.byteLength };
 }
 
@@ -148,7 +152,7 @@ export async function deleteMedia(tenantId: string, id: string, force: boolean):
   const usage = await mediaUsage(tenantId, item.path);
   if (usage.length && !force) return { usage };
   const supabase = await createSupabaseServerClient();
-  const { error: rmError } = await supabase.storage.from(STORE_ASSETS_BUCKET).remove([item.path]);
+  const { error: rmError } = await supabase.storage.from(STORE_ASSETS_BUCKET).remove([item.path, ...variantPathsFor(item.path)]);
   if (rmError) throw new AppError("FORBIDDEN", { message: "You don't have permission to delete this file." });
   const { error } = await supabase.from("media_assets").delete().eq("tenant_id", tenantId).eq("id", id);
   if (error) throw mapDbError(error);

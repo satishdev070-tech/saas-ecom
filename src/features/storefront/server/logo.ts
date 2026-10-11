@@ -5,9 +5,10 @@ import sharp from "sharp";
 import { assetUrl } from "@/lib/storage/assets";
 import { logger } from "@/lib/observability/logger";
 import { storeImageSrc } from "@/features/storefront/components/store-image";
+import { pickVariantWidth } from "@/lib/storage/variants";
 
 /**
- * Header logo as an optimised image (AVIF/WebP, at most 640px wide) instead of the uploaded
+ * Header logo as a resized WebP copy (lib/images/loader, at most 960px wide) instead of the uploaded
  * original, which can be a multi-MB PNG that React preloads on every page.
  *
  * The optimizer rounds the resized height to whole pixels, which would change the logo's aspect
@@ -36,8 +37,8 @@ export const getStoreLogo = cache(async (path: string | null | undefined): Promi
   if (!optimised || optimised === original) return { src: original };
   try {
     const size = await originalSize(original);
-    // Small files (<= 640px wide) aren't resized, so their ratio is already exact.
-    if (size && size.width > 640) return { src: optimised, aspectRatio: `${size.width} / ${size.height}` };
+    // Files no wider than the copy (960px for the default 640 request) aren't resized, so their ratio is already exact.
+    if (size && size.width > pickVariantWidth(640)) return { src: optimised, aspectRatio: `${size.width} / ${size.height}` };
     if (size) return { src: optimised };
   } catch (e) {
     logger.warn("storefront.logo_size_failed", { error: e instanceof Error ? e.message : String(e) });

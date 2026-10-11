@@ -1,7 +1,7 @@
 import Image, { getImageProps } from "next/image";
 import { assetUrl } from "@/lib/storage/assets";
 
-const optimizerUrl = (src: string, w: number) => `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=75`;
+import imageLoader from "@/lib/images/loader";
 
 /**
  * Tenant image from Supabase Storage via next/image. Renders a neutral placeholder when the
@@ -73,9 +73,9 @@ export function StoreArtImage({
 }
 
 /**
- * Optimised URL (AVIF/WebP via the Next image optimizer) for a tenant image rendered with a plain
+ * Resized URL (a pre-sized WebP copy via lib/images/loader) for a tenant image rendered with a plain
  * <img> whose size comes from the file itself, e.g. the header logo (`h-auto w-auto` + max caps).
- * The optimizer only ever shrinks, so the image keeps its natural size up to `width` px; a CSS cap
+ * Copies are never enlarged, so the image keeps its natural size up to the copy's width; a CSS cap
  * at or below `width` renders it at the original's size, except that the resized height is rounded
  * to whole pixels (pass the original ratio as CSS aspect-ratio for an exact match, as
  * features/storefront/server/logo.ts does for the header logo).
@@ -83,7 +83,7 @@ export function StoreArtImage({
  */
 export function storeImageSrc(path: string | null | undefined, width: 384 | 640 = 640): string | null {
   const src = assetUrl(path);
-  // The optimizer refuses SVG (vector anyway) and passes GIF through: use those as they are.
+  // SVG (vector) and GIF (may be animated) are used as they are; the loader passes them through.
   if (!src || /\.(svg|gif)$/i.test(src)) return src;
-  return optimizerUrl(src, width);
+  return imageLoader({ src, width });
 }
