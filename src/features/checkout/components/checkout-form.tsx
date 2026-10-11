@@ -31,7 +31,7 @@ function Field({ label, name, errors, className = "", ...rest }: { label: string
   );
 }
 
-export function CheckoutForm({ initial, prefill, codOffered, onlineOffered, signedIn, items = [], whatsappOptInStoreName = null, locationAutofill = false }: { initial: CheckoutSummary; prefill: Prefill; codOffered: boolean; onlineOffered: boolean; signedIn: boolean; items?: AnalyticsItem[]; whatsappOptInStoreName?: string | null; locationAutofill?: boolean }) {
+export function CheckoutForm({ initial, prefill, codOffered, onlineOffered, onlineVia = null, signedIn, items = [], whatsappOptInStoreName = null, locationAutofill = false }: { initial: CheckoutSummary; prefill: Prefill; codOffered: boolean; onlineOffered: boolean; onlineVia?: string | null; signedIn: boolean; items?: AnalyticsItem[]; whatsappOptInStoreName?: string | null; locationAutofill?: boolean }) {
   const [summary, setSummary] = useState(initial);
   const [pin, setPin] = useState(prefill.postalCode);
   const [rateId, setRateId] = useState<string | undefined>(initial.shipping.selectedId ?? undefined);
@@ -192,7 +192,7 @@ export function CheckoutForm({ initial, prefill, codOffered, onlineOffered, sign
           {onlineOffered ? (
             <label className="sf-border flex cursor-pointer items-center gap-2 rounded border p-3 text-sm has-[:checked]:border-[var(--sf-primary)]">
               <input type="radio" name="paymentMethod" value="online" checked={method === "online"} onChange={() => { setMethod("online"); requote({ paymentMethod: "online" }); }} />
-              Pay online <span className="sf-muted">· UPI, cards, net banking, wallets</span>
+              Pay online <span className="sf-muted">· UPI, cards, net banking, wallets{onlineVia ? ` · secured by ${onlineVia}` : ""}</span>
             </label>
           ) : null}
           {codOffered ? (

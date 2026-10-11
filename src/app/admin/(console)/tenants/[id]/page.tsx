@@ -22,6 +22,7 @@ import { percentOfLimit, storageLimitBytes } from "@/features/platform/stats";
 import { formatBytes } from "@/features/platform/health";
 import { maskEmail } from "@/features/platform/privacy";
 import { ChangePlanForm, ExtendTrialForm, FlagOverrideForm, RecheckDomainButton, StartSupportForm, TenantStatusForm } from "@/features/platform/components/admin-forms";
+import { LoginAsStoreButton, MemberAccessActions } from "@/features/platform/components/store-admin-forms";
 import { DomainStatusBadge, SslStatusBadge } from "@/features/domains/components/domain-display";
 import { Badge, Card, PageHeader, StatCard, Table, td, th } from "@/components/ui/layout";
 import { formatDate, formatDateTime } from "@/features/analytics/dates";
@@ -78,6 +79,9 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
   const limits = t.plan?.limits ?? null;
   const bytes = storage[0]?.bytes ?? 0;
   const url = storeOrigin(storeSubdomain(t.slug));
+  const superAdmin = ctx.role === "super_admin";
+  const owner = members.find((m) => m.role === "owner" && m.status === "active" && m.email);
+  const notes = ([] as string[]).concat(sp.note ?? []).slice(0, 5);
   return (
     <div className="space-y-6">
       <PageHeader
@@ -95,6 +99,7 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
         back={<Link href="/admin/stores">← Stores</Link>}
         actions={
           <>
+            {manage && superAdmin && owner?.email && t.status !== "cancelled" ? <LoginAsStoreButton tenantId={id} ownerEmail={owner.email} /> : null}
             {manage ? <TenantStatusForm tenantId={id} status={t.status} /> : null}
             {manage ? <ChangePlanForm tenantId={id} planId={t.planId} plans={plans.map((p) => ({ value: p.id, label: p.name }))} /> : null}
             {manage && t.status === "trial" ? <ExtendTrialForm tenantId={id} /> : null}
@@ -114,6 +119,13 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
         <p role="status" className="rounded-md bg-success/10 px-3 py-2 text-sm text-success">
           Store created.
         </p>
+      ) : null}
+      {notes.length ? (
+        <ul role="status" className="list-disc space-y-1 rounded-md bg-warning/10 px-6 py-2 text-sm text-warning">
+          {notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
       ) : null}
       {t.statusReason ? <p className="text-sm text-muted">Status reason: {t.statusReason}</p> : null}
 
@@ -224,6 +236,7 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
               <th className={th}>Role</th>
               <th className={th}>Status</th>
               <th className={th}>Joined</th>
+              {manage ? <th className={th}>Account access</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -236,6 +249,7 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                 <td className={`${td} capitalize`}>{m.role}</td>
                 <td className={td}>{m.status}</td>
                 <td className={td}>{formatDate(m.createdAt)}</td>
+                {manage ? <td className={td}>{m.email && m.status === "active" ? <MemberAccessActions tenantId={id} userId={m.userId} email={m.email} superAdmin={superAdmin} canManage={manage} /> : <span className="text-xs text-muted">—</span>}</td> : null}
               </tr>
             ))}
           </tbody>

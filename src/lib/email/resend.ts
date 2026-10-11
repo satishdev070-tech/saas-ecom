@@ -67,3 +67,36 @@ export async function postToResend(msg: OutgoingEmail, apiKey: string, fetchImpl
     return { ok: false, error: name === "TimeoutError" || name === "AbortError" ? "resend timeout" : "resend network error", retryable: true };
   }
 }
+
+export type ResendDomain = { name: string; status: string; region: string | null };
+export type DomainsResult = { ok: true; domains: ResendDomain[] } | { ok: false; reason: "restricted" | "unauthorized" | "error" };
+
+/**
+ * Lists the account's sending domains (GET /domains) for the admin console. A key created with
+ * "Sending access" only can't read domains (Resend answers 401 restricted_api_key): that's fine
+ * and reported as "restricted". Never throws.
+ */
+export async function listResendDomains(apiKey: string, fetchImpl: typeof fetch = fetch): Promise<DomainsResult> {
+  try {
+    const res = await fetchImpl("https://api.resend.com/domains", { headers: { Authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(8_000), cache: "no-store" });
+    const json = (await res.json().catch(() => ({}))) as { data?: unknown; name?: unknown };
+    if (!res.ok) return { ok: false, reason: json.name === "restricted_api_key" ? "restricted" : res.status === 401 || res.status === 403 ? "unauthorized" : "error" };
+    const list = Array.isArray(json.data) ? json.data : [];
+    return {
+      ok: true,
+      domains: list.slice(0, 20).map((d) => {
+        const r = d as { name?: unknown; status?: unknown; region?: unknown };
+        return { name: String(r.name ?? "").slice(0, 120), status: String(r.status ?? "unknown").slice(0, 40), region: typeof r.region === "string" ? r.region : null };
+      }),
+    };
+  } catch {
+    return { ok: false, reason: "error" };
+  }
+}
+
+/** The address part of a From header ("Name <a@b.c>" → "b.c"). */
+export function senderDomain(from: string): string | null {
+  const m = /<([^>]+)>/.exec(from) ?? [null, from];
+  const at = (m[1] ?? "").trim().split("@")[1];
+  return at ? at.toLowerCase() : null;
+}

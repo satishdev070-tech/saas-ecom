@@ -1,6 +1,6 @@
 # Implementation Status
 
-_Last updated: 2026-10-03 (live theme previews, platform branding / GA4 / sign-in / email console, checkout options)_
+_Last updated: 2026-10-11 (online payments fix + transactions, super-admin store control, auth email via Resend, 16 more industries)_
 
 ## Phase overview
 
@@ -33,6 +33,36 @@ _Last updated: 2026-10-03 (live theme previews, platform branding / GA4 / sign-i
 | Runtime vs real Supabase (`next start`) | ✅ store pages 0.4–0.7 s, marketing 0.02 s; order #1 placed, paid and confirmed; seller, staff and shopper sign-in verified |
 
 Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprocket, Cloudflare custom hostnames.
+
+## Payments, super-admin store control, Resend auth email, more industries (2026-10-11)
+
+- **Online payments at checkout (fix).** `loadPaymentOptions` no longer gates every gateway on the Razorpay flag
+  (`online_payments`), which hid Cashfree/PayU at checkout; each gateway is gated by its own flag in `activeIntegration`.
+  The first successful "Save & test" of a payment gateway now switches it on (it used to stay off until a separate
+  "Enable" click, so stores looked configured but checkout had no "Pay online"). Settings → Payments shows whether online
+  payment is live and why not; checkout shows "secured by <gateway>". Go-live hints: Cashfree domain whitelisting, Razorpay
+  website approval.
+- **Dashboard → Payments** (`/dashboard/payments` + CSV export): every gateway attempt with status, method, gateway ids
+  and order link; collected total, success rate, per-gateway totals and refunds for the filtered period.
+- **Super admin → New store** (`/admin/tenants/new`): existing or new owner account (super admin), plan, trial/active, trial
+  length, industry, store type, contact details, marketplace theme (draft or published), coming-soon or live, welcome email.
+- **Super admin → store Team**: reset-password link (emailed + copyable), set password (super admin), **Log in as store**
+  (super admin; reason, audit, dashboard banner, "End support sign-in"). ADR-033.
+- **Auth email via Resend**: Supabase Send Email hook → `/api/auth/email-hook` (Standard Webhooks signature,
+  `SEND_EMAIL_HOOK_SECRET`), branded per store/platform, token-hash links (platform `/auth/callback` now accepts them).
+  Admin → Email shows the sending-domain status from Resend, hook state and the last 25 sends. ADR-034.
+- **16 new industries** (eyewear, fragrances, home décor, kitchen, home textiles, toys, gifts, plants, pooja, tools, music,
+  art, beverages, sweets, mobile accessories, ayurveda), five themes each (80 themes, `themes/extended.ts`, no demo stores
+  yet: the marketplace shows the token mockup). Migration 2700 (`supabase/dev/apply-2700.sql`) seeds the categories.
+- Tests: `tests/unit/payments/*`, `tests/unit/email/auth-hook.test.ts`, `tests/unit/platform/store-admin-schemas.test.ts`;
+  theme marketplace tests cover the new industries (≥5 distinct layouts each).
+- Verification: `pnpm typecheck` ✅ · `pnpm lint` ✅ · `pnpm test` ✅ (57 files, 708 tests) · `pnpm build` ✅ ·
+  `pnpm test:db` ✅ (17 files, 134 tests; all migrations incl. 2700 apply from scratch).
+- **To go live:** run `supabase/dev/apply-2700.sql`; set `SEND_EMAIL_HOOK_SECRET` and enable the hook in Supabase
+  (Admin → Email has the exact URL); Resend key + verified domain in Admin → Email.
+- Not verified here (no Supabase project or gateway accounts in this environment): live Razorpay/Cashfree payments, the
+  Supabase hook call, Resend delivery, and the Admin API calls (createUser, generateLink, verifyOtp) used by
+  create-store / reset / log-in-as.
 
 ## Move a domain between stores; owner closes a store (2026-10-03)
 

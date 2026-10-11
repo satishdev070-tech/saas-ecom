@@ -2,8 +2,9 @@
 
 Every email the app sends goes through `src/lib/email/send.ts` → Resend REST API
 (`POST https://api.resend.com/emails`, `Authorization: Bearer RESEND_API_KEY`, `Idempotency-Key` header).
-Supabase Auth emails (sign-in link, OTP, password reset, signup confirmation) are sent by Supabase itself, so
-route them through Resend SMTP (see below).
+Supabase Auth emails (sign-up confirmation, password reset, magic link, invite, email change) go through the same path
+once the **Send Email hook** is enabled (ADR-034, `src/app/api/auth/email-hook`). The key and From address can be set in
+**Admin → Email** (overrides the env vars), which also shows the sending-domain status, the hook state and recent sends.
 
 ## Env vars
 
@@ -11,6 +12,7 @@ route them through Resend SMTP (see below).
 | --- | --- | --- |
 | `RESEND_API_KEY` | prod | `re_…`. Without it, emails are **not sent**: metadata is logged and `email_log.status = 'logged'`. |
 | `EMAIL_FROM` | prod | e.g. `The Paliya <orders@mail.yourdomain.in>`. The address must be on a domain verified in Resend. Stores only change the display name (`"Ramya By Ayushi" <orders@mail.yourdomain.in>`). Reply-To is set to the store's email. |
+| `SEND_EMAIL_HOOK_SECRET` | prod | `v1,whsec_…` from Supabase → Authentication → Hooks → Send Email. Enables branded auth emails via Resend. |
 | `NEXT_PUBLIC_APP_URL` / root domain | existing | Used for dashboard links in owner alerts and invites. |
 
 ## Architecture
@@ -38,6 +40,9 @@ route them through Resend SMTP (see below).
 | Team invite | `team/actions.ts` → `sendTeamInviteEmail` |
 | Contact-form forward | `submitContactFormAction`. Ready, but the storefront contact page has no form yet. |
 | Manual re-send | Dashboard order page. Sends the customer email inline and reports whether it actually went out. |
+| Auth emails (confirm, reset, magic link, invite, email change, re-auth code) | Supabase Send Email hook → `/api/auth/email-hook` |
+| Store created for you (set-password link for new accounts) | Admin → New store, “Email the owner” |
+| Password reset link / password changed (support) | Admin → Store → Team → Reset password / Set password |
 
 ## Setup steps
 
@@ -48,7 +53,11 @@ route them through Resend SMTP (see below).
    - optionally a DMARC `TXT` (`_dmarc`, e.g. `v=DMARC1; p=none;`)
    Wait until the domain shows **Verified**.
 3. Create an API key with **Sending access**, then set `RESEND_API_KEY` and `EMAIL_FROM` in Vercel (Production + Preview) and redeploy.
-4. Route Supabase Auth email through Resend. In Supabase Dashboard → Authentication → Emails → **SMTP Settings**, enable custom SMTP and enter:
+4. Route Supabase Auth email through Resend (recommended: the hook). Supabase Dashboard → Authentication → **Hooks** →
+   **Send Email hook** → HTTPS → URL `https://{platform root}/api/auth/email-hook` → generate the secret → set it as
+   `SEND_EMAIL_HOOK_SECRET` in Vercel → redeploy → enable the hook. Emails are then branded per store (shopper flows) or
+   for the platform (seller flows), logged in `email_log` as `auth_<action>`, and links use token hashes, so they work in
+   any browser. Alternative without the hook: SMTP. In Supabase Dashboard → Authentication → Emails → **SMTP Settings**, enable custom SMTP and enter:
    - Host `smtp.resend.com`, Port `465`, Username `resend`, Password = a Resend API key
    - Sender email on the verified domain (e.g. `no-reply@mail.yourdomain.in`) and a sender name
    Then raise the Auth email rate limit (Authentication → Rate Limits) to suit your traffic.

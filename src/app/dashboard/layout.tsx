@@ -12,6 +12,9 @@ import { signOutAction } from "@/features/auth/actions";
 import { getDashboardAlerts } from "@/features/dashboard-ui/alerts";
 import { storeOrigin, storeSubdomain } from "@/lib/platform/urls";
 import { roleLabel } from "@/lib/permissions/labels";
+import { cookies } from "next/headers";
+import { SUPPORT_LOGIN_COOKIE, readSupportLogin } from "@/features/platform/server/store-admin";
+import { endSupportLoginAction } from "@/features/platform/store-admin-actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: { default: "Dashboard", template: "%s · Dashboard" }, robots: { index: false, follow: false }, ...(await platformIconMetadata()) };
@@ -125,7 +128,23 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
     </>
   );
 
-  const banner =
+  // Platform super admin signed in as this member (Admin → Store → Log in as store).
+  const support = readSupportLogin((await cookies()).get(SUPPORT_LOGIN_COOKIE)?.value);
+  const supportBanner =
+    support && support.userId === ctx.user.id ? (
+      <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-b border-warning/40 bg-warning/15 px-5 py-2 text-small text-foreground">
+        <span>
+          <span className="font-semibold">Support sign-in:</span> you&apos;re acting as {ctx.user.email} in {ctx.tenantName} (started by {support.adminEmail || "a super admin"}). Every action is recorded.
+        </span>
+        <form action={endSupportLoginAction}>
+          <button type="submit" className="rounded-md border border-warning px-3 py-1 text-caption font-medium hover:bg-warning/20">
+            End support sign-in
+          </button>
+        </form>
+      </div>
+    ) : null;
+
+  const statusBanner =
     ctx.tenantStatus === "suspended" ? (
       <div role="alert" className="border-b border-error/30 bg-error/10 px-5 py-2 text-small text-error">
         This store is suspended and hidden from shoppers. Contact support to restore it.
@@ -138,6 +157,12 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
         </Link>
       </div>
     ) : null;
+  const banner = supportBanner || statusBanner ? (
+    <>
+      {supportBanner}
+      {statusBanner}
+    </>
+  ) : null;
 
   return (
     <AppShell groups={groups} homeHref="/dashboard" brand={brand} sidebarFooter={sidebarFooter} topbarEnd={topbarEnd} banner={banner} storageKey="paliya-seller-sidebar">

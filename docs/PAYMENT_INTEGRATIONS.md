@@ -10,6 +10,25 @@ every enabled gateway on the pay page. COD is configured separately (Settings �
 | PayU | Merchant key, Salt (v1), environment | Hosted checkout form POST with SHA-512 request hash | Reverse hash check on `surl/furl` **and** `verify_payment` postservice | `/api/webhooks/payu` (reverse hash) | `cancel_refund_transaction` |
 | COD | — | — | Marked paid on delivery | — | Manual |
 
+## Going live checklist (per store)
+
+1. Settings → Payments → enter the keys → **Save & test connection**. The first successful test switches the gateway on
+   (a gateway the seller later switches off stays off on re-save). The banner at the top says whether online payment is live.
+2. Add the webhook URL shown on the card in the gateway dashboard.
+3. Live mode: Razorpay needs the store website approved; Cashfree needs the store domain whitelisted
+   (Developers → Whitelisting), otherwise order creation is refused.
+4. Checkout shows "Pay online · secured by <gateway>"; the pay page lists every live gateway.
+
+Each gateway is gated only by its own plan flag (`online_payments` = Razorpay, `payments_cashfree`, `payments_payu`).
+Before 2026-10-11 the Razorpay flag also hid Cashfree/PayU at checkout; fixed in `checkout/payment-options.ts`.
+
+## Transactions (Dashboard → Payments)
+
+`/dashboard/payments` (permission `orders.read`, RLS `payments_staff`) lists every gateway attempt from `payments`:
+gateway, method, status (started / successful / failed / refunded), gateway order and payment ids, linked order. Totals for
+the filtered set (collected, success rate, per gateway), refunds in the period, filters (gateway, status, dates, search by
+order number or gateway id) and an audited, rate-limited CSV export (`/dashboard/payments/export`).
+
 ## Rules
 
 - **The browser never marks an order paid.** Every path (return URL, redirect, webhook) re-verifies with the gateway's server API and checks the amount, then calls `svc_mark_order_paid`, which locks the order row and is idempotent.

@@ -19,6 +19,7 @@ import { WATCHES_THEMES } from "./themes/watches";
 import { ORGANIC_THEMES } from "./themes/organic";
 import { GOURMET_THEMES } from "./themes/gourmet";
 import { GENERAL_THEMES } from "./themes/general";
+import { EXTENDED_THEMES } from "./themes/extended";
 
 export type { HomeItem, MarketplaceTheme, ThemePreset, ThemeStyle } from "./types";
 
@@ -91,7 +92,7 @@ const ORIGINAL_THEMES: MarketplaceTheme[] = [
   },
 ];
 
-export const MARKETPLACE_THEMES: readonly MarketplaceTheme[] = [...FASHION_THEMES, ...ORIGINAL_THEMES, ...ELECTRONICS_THEMES, ...BEAUTY_THEMES, ...FURNITURE_THEMES, ...GROCERY_THEMES, ...JEWELLERY_THEMES, ...FOOTWEAR_THEMES, ...HEALTH_THEMES, ...SPORTS_THEMES, ...KIDS_THEMES, ...BOOKS_THEMES, ...PETS_THEMES, ...AUTOMOTIVE_THEMES, ...SMART_HOME_THEMES, ...BAGS_THEMES, ...WATCHES_THEMES, ...ORGANIC_THEMES, ...GOURMET_THEMES, ...GENERAL_THEMES];
+export const MARKETPLACE_THEMES: readonly MarketplaceTheme[] = [...FASHION_THEMES, ...ORIGINAL_THEMES, ...ELECTRONICS_THEMES, ...BEAUTY_THEMES, ...FURNITURE_THEMES, ...GROCERY_THEMES, ...JEWELLERY_THEMES, ...FOOTWEAR_THEMES, ...HEALTH_THEMES, ...SPORTS_THEMES, ...KIDS_THEMES, ...BOOKS_THEMES, ...PETS_THEMES, ...AUTOMOTIVE_THEMES, ...SMART_HOME_THEMES, ...BAGS_THEMES, ...WATCHES_THEMES, ...ORGANIC_THEMES, ...GOURMET_THEMES, ...EXTENDED_THEMES, ...GENERAL_THEMES];
 
 export function findMarketplaceTheme(key: string): MarketplaceTheme | null {
   return MARKETPLACE_THEMES.find((t) => t.key === key) ?? null;

@@ -1,6 +1,6 @@
 /**
  * Store / business categories ("industries"). Mirrors the store_categories table seeded by
- * migration 1800, so the theme marketplace can filter by industry without a database round
+ * migrations 1800 and 2700, so the theme marketplace can filter by industry without a database round
  * trip. Add a category here and in a migration together.
  */
 export const INDUSTRIES = [
@@ -23,6 +23,22 @@ export const INDUSTRIES = [
   { slug: "watches", name: "Watches & Luxury Accessories", short: "Watches" },
   { slug: "organic", name: "Organic & Natural Products", short: "Organic" },
   { slug: "gourmet", name: "Bakery & Gourmet Food", short: "Gourmet" },
+  { slug: "eyewear", name: "Eyewear & Sunglasses", short: "Eyewear" },
+  { slug: "fragrances", name: "Perfumes & Fragrances", short: "Fragrances" },
+  { slug: "home-decor", name: "Home Décor & Lighting", short: "Home Décor" },
+  { slug: "kitchen", name: "Kitchen & Dining", short: "Kitchen" },
+  { slug: "home-textiles", name: "Home Textiles & Furnishings", short: "Home Textiles" },
+  { slug: "toys", name: "Toys & Games", short: "Toys" },
+  { slug: "gifts", name: "Gifts & Personalised", short: "Gifts" },
+  { slug: "plants", name: "Plants & Gardening", short: "Plants" },
+  { slug: "pooja", name: "Pooja & Spiritual", short: "Pooja" },
+  { slug: "tools", name: "Hardware & Tools", short: "Tools" },
+  { slug: "music", name: "Musical Instruments", short: "Music" },
+  { slug: "art", name: "Art & Collectibles", short: "Art" },
+  { slug: "beverages", name: "Tea, Coffee & Beverages", short: "Beverages" },
+  { slug: "sweets", name: "Sweets & Snacks", short: "Sweets" },
+  { slug: "mobile-accessories", name: "Mobile & Computer Accessories", short: "Mobile Accessories" },
+  { slug: "ayurveda", name: "Ayurveda & Herbal", short: "Ayurveda" },
   { slug: "general", name: "General / Multi-category", short: "General" },
 ] as const;
 

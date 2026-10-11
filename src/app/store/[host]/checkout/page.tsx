@@ -17,6 +17,8 @@ import type { AnalyticsItem } from "@/features/tracking/items";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
 
+const GATEWAY_NAMES = { razorpay: "Razorpay", cashfree: "Cashfree", payu: "PayU", manual: "Test" } as const;
+
 export default async function CheckoutPage({ params }: PageProps<"/store/[host]/checkout">) {
   const { host } = await params;
   const { sf } = await getRenderContext(host);
@@ -62,6 +64,7 @@ export default async function CheckoutPage({ params }: PageProps<"/store/[host]/
         whatsappOptInStoreName={(await whatsappOptInAvailable(tenantId)) ? sf.store.name : null}
         codOffered={payment.codOffered}
         onlineOffered={payment.online !== null}
+        onlineVia={payment.gateways.filter((g) => g !== "manual").map((g) => GATEWAY_NAMES[g]).join(" / ") || null}
         prefill={{
           email: customer?.email ?? view.cart?.email ?? "",
           phone,
