@@ -1,15 +1,5 @@
-/**
- * Baseline security headers applied to every response via next.config.ts.
- * CSP is intentionally deferred to the hardening phase (needs nonce support for
- * Next inline scripts and the payment provider's checkout script). See DECISIONS.md.
- */
-export const securityHeaders: { key: string; value: string }[] = [
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), browsing-topics=()" },
-  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-  { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
-];
+// Baseline security headers (every response) live in next.config.mjs, which must stay plain
+// JavaScript; per-request framing headers are below.
 
 /**
  * Framing policy, set per request by the proxy (ADR-018). Storefront responses may be framed

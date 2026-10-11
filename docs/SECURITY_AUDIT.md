@@ -40,6 +40,6 @@ lint rule or CODEOWNERS entry for new `createSupabaseAdminClient` imports, as th
 
 ## Files changed for security
 
-`next.config.ts`, `src/lib/auth/landing.ts`, `src/lib/auth/session.ts`, `src/lib/tenant/membership.ts`,
+`next.config.mjs`, `src/lib/auth/landing.ts`, `src/lib/auth/session.ts`, `src/lib/tenant/membership.ts`,
 `src/lib/tenant/routing.ts` (`/seller` platform-only), `src/app/admin/login/page.tsx`,
 `src/app/store/[host]/account/auth/callback/route.ts`, `tests/rls/tenant-isolation.test.ts`, `tests/rls/platform.test.ts`.

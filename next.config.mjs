@@ -1,5 +1,20 @@
-import type { NextConfig } from "next";
-import { securityHeaders } from "./src/lib/security/headers";
+// Plain JavaScript (not next.config.ts) on purpose: hosts whose build servers can't run Next's
+// native compiler (old glibc, e.g. Hostinger) fall back to the WebAssembly compiler, which can't
+// load a TypeScript config. Keep this file free of TypeScript imports.
+
+/**
+ * Baseline security headers applied to every response.
+ * CSP is intentionally deferred to the hardening phase (needs nonce support for Next inline
+ * scripts and the payment provider's checkout script). See docs/DECISIONS.md. Framing headers are
+ * set per request by the proxy (src/lib/security/headers.ts, ADR-018).
+ */
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), browsing-topics=()" },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+];
 
 const supabaseHost = (() => {
   try {
@@ -9,7 +24,8 @@ const supabaseHost = (() => {
   }
 })();
 
-const nextConfig: NextConfig = {
+/** @type {import("next").NextConfig} */
+const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   experimental: {
