@@ -1,0 +1,53 @@
+# Captures theme screenshots from the live demo stores and opens a PR with them.
+# Run it from GitHub → Actions → "Capture theme previews" → Run workflow.
+# Static screenshots let the marketing site show real theme previews without loading live demo
+# stores (and their images) for every visitor.
+name: Capture theme previews
+
+on:
+  workflow_dispatch:
+    inputs:
+      root:
+        description: Platform root domain that serves the demo stores
+        default: buildbrighten.in
+        required: true
+      only:
+        description: Optional comma-separated theme keys (blank = all themes)
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Capture screenshots
+        env:
+          ROOT: ${{ inputs.root }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          if [ -n "$ONLY" ]; then pnpm themes:capture --root "$ROOT" --only "$ONLY"; else pnpm themes:capture --root "$ROOT"; fi
+      - name: Open a pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/theme-previews
+          commit-message: "Theme preview screenshots"
+          title: "Theme preview screenshots"
+          body: |
+            Screenshots of each marketplace theme on its demo store, captured by the
+            "Capture theme previews" workflow. Merge to show them on the marketing site
+            (static files, no Image Optimization).
+          add-paths: |
+            public/theme-previews/**
+            src/features/marketing-site/theme-previews.json

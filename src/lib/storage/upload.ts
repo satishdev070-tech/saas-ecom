@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 import { STORE_ASSETS_BUCKET } from "./assets";
+import { createVariantsOnUpload } from "./variants-server";
 
 export const UPLOAD_AREAS = ["products", "collections", "categories", "theme", "pages", "blog", "brand", "media"] as const;
 export type UploadArea = (typeof UPLOAD_AREAS)[number];
@@ -42,6 +43,8 @@ export async function uploadTenantImage(tenantId: string, area: UploadArea, file
     upsert: false,
   });
   if (error) throw new AppError("FORBIDDEN", { message: "Upload was not permitted.", context: { storage: error.message } });
+  // Pre-sized WebP copies for the storefront (lib/images/loader). Best effort: /api/img makes any that fail.
+  await createVariantsOnUpload(supabase, path, bytes);
   const { error: dbError } = await supabase.from("media_assets").insert({ tenant_id: tenantId, storage_path: path, mime_type: kind.mime, bytes: file.size });
   if (dbError) throw new AppError("INTERNAL", { context: { db: dbError.message } });
   return { path, mime: kind.mime, bytes: file.size };
@@ -69,6 +72,8 @@ export async function uploadTenantVideo(tenantId: string, area: UploadArea, file
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.storage.from(STORE_ASSETS_BUCKET).upload(path, bytes, { contentType: "video/mp4", cacheControl: "31536000", upsert: false });
   if (error) throw new AppError("FORBIDDEN", { message: "Upload was not permitted.", context: { storage: error.message } });
+  // Pre-sized WebP copies for the storefront (lib/images/loader). Best effort: /api/img makes any that fail.
+  await createVariantsOnUpload(supabase, path, bytes);
   const { error: dbError } = await supabase.from("media_assets").insert({ tenant_id: tenantId, storage_path: path, mime_type: "video/mp4", bytes: file.size, filename: file.name.slice(0, 200), folder: "theme" });
   if (dbError) throw new AppError("INTERNAL", { context: { db: dbError.message } });
   return { path, bytes: file.size };

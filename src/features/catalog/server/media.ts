@@ -1,4 +1,5 @@
 import "server-only";
+import { variantPathsFor } from "@/lib/storage/variants";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mapDbError } from "@/lib/supabase/errors";
 import { AppError } from "@/lib/errors";
@@ -128,7 +129,7 @@ export async function removeStoredFiles(tenantId: string, paths: string[]) {
       if (!error && !(data ?? []).length) own.push(path);
     }
     if (!own.length) return;
-    const { error } = await supabase.storage.from(STORE_ASSETS_BUCKET).remove(own);
+    const { error } = await supabase.storage.from(STORE_ASSETS_BUCKET).remove([...own, ...own.flatMap(variantPathsFor)]);
     if (error) logger.warn("catalog.storage_remove_failed", { tenantId, error: error.message });
     const { error: dbErr } = await supabase.from("media_assets").delete().eq("tenant_id", tenantId).in("storage_path", own);
     if (dbErr) logger.warn("catalog.media_asset_delete_failed", { tenantId, error: dbErr.message });

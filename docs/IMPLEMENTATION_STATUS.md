@@ -64,6 +64,18 @@ Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprock
   Supabase hook call, Resend delivery, and the Admin API calls (createUser, generateLink, verifyOtp) used by
   create-store / reset / log-in-as.
 
+## Images without Vercel Image Optimization (2026-10-11)
+
+The Vercel Hobby team was paused for exceeding Image Optimization transformations.
+- Store images use a custom `next/image` loader (`src/lib/images/loader.ts`): `/api/img?p=…&w=…`
+  308-redirects (cached 1 year) to a pre-sized WebP copy in Supabase Storage,
+  `{original}__w{480|960|1600}.webp`. Copies are made at upload (uploader's client, RLS) and,
+  for older images, once on first request (secret-key client, ADR-006 addendum). Deleting an
+  image deletes its copies. No Vercel Image Optimization is used anywhere.
+- WebP only, srcset widths 96/384/640/1080/1920, 31-day optimizer cache (belt and braces).
+- Marketing theme previews are screenshots (`pnpm themes:capture` / GitHub Action "Capture theme
+  previews") or mockups; the live demo store loads only on "Live preview".
+
 ## Order printing, festive vibes, checkout gateway choice (2026-10-11)
 
 - **Print center** `/print/orders?ids=…&docs=invoice,slip,label,thanks` (orders.read, RLS):
