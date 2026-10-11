@@ -2165,3 +2165,14 @@ a.sf-spot-add-square {
     transition: none;
   }
 }
+
+/* Festive vibes: falling petals (features/storefront/components/festive-petals.tsx). */
+@keyframes sf-festive-fall {
+  0% {
+    transform: translate3d(0, -2rem, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(3rem, 110vh, 0) rotate(540deg);
+    opacity: 0;
+  }
+}

@@ -64,6 +64,30 @@ Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprock
   Supabase hook call, Resend delivery, and the Admin API calls (createUser, generateLink, verifyOtp) used by
   create-store / reset / log-in-as.
 
+## Order printing, festive vibes, checkout gateway choice (2026-10-11)
+
+- **Print center** `/print/orders?ids=…&docs=invoice,slip,label,thanks` (orders.read, RLS):
+  tax invoice (A4, frozen invoice snapshot), packing slip with tick boxes (A5), shipping label
+  4×6 in / 100×150 mm with COD/PREPAID, Code 128 barcode (AWB when booked, else order number),
+  return address (thermal label printers), and a thank-you "welcome to the family" card (A6) with
+  the items and the store's socials; message editable in Settings → Checkout. Each document prints
+  on its own paper size (CSS named pages). Order page: Invoice / Shipping label / Packing slip /
+  Print all. Orders list: tick orders and print labels, slips or everything at once.
+  The old `/dashboard/orders/[id]/invoice` and `/packing-slip` links (which 404'd) redirect there.
+- **Checkout**: with more than one live gateway, shoppers pick "Online payment · Razorpay" or
+  "· Cashfree" at checkout; the pay page pre-selects and starts that gateway (`?via=`).
+- **Festive vibes** (migration 2800, `stores.festive_settings`): Settings → Festive vibes schedules
+  Navratri / Durga Puja / Diwali / Karva Chauth / Holi / Raksha Bandhan / Eid / Wedding season /
+  Independence Day / Christmas / New Year / Sale looks with start/end dates (IST, inclusive):
+  announcement bar, garland under the header, optional falling petals (reduced-motion aware).
+  The theme itself isn't changed; previews show the plain theme.
+- **Product editor**: "% off" column (sets price from MRP) and "Set % off MRP on all".
+- **Admin → Stores**: compact list (store, type, status, plan, address, orders) that expands for
+  owner, category, counts, revenue, dates and actions.
+- **Trial banner** names the plan and days left; Admin → Change plan can also end the trial
+  (status → active), which is why a store on the Scale plan still said "free trial".
+- **Store details**: "Brand & sharing" checklist (logo, favicon, share image, social links).
+
 ## Move a domain between stores; owner closes a store (2026-10-03)
 
 - **Migration 2600** (`supabase/dev/apply-2600.sql`, two SECURITY DEFINER functions, no data

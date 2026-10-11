@@ -94,7 +94,12 @@ export const tenantStatusSchema = z.object({
   confirm: z.literal("yes", { error: "Confirm the change" }),
 });
 
-export const changePlanSchema = z.object({ tenantId: z.uuid(), planId: z.uuid({ error: "Choose a plan" }) });
+export const changePlanSchema = z.object({
+  tenantId: z.uuid(),
+  planId: z.uuid({ error: "Choose a plan" }),
+  /** Also end the trial: status trial -> active (otherwise the seller keeps seeing "free trial"). */
+  activate: z.preprocess((v) => v === "true" || v === "on" || v === true, z.boolean()).optional(),
+});
 
 export const extendTrialSchema = z.object({
   tenantId: z.uuid(),

@@ -68,10 +68,25 @@ export default async function OrdersPage({ searchParams }: PageProps<"/dashboard
           <EmptyState title="No orders yet" description="When customers check out, their orders appear here. Share your store link to get your first sale." />
         )
       ) : (
-        <>
+        <form action="/print/orders" method="get" target="_blank">
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-muted">Print for selected orders:</span>
+            <button type="submit" name="docs" value="label" className="inline-flex h-8 items-center rounded-md border border-border bg-surface px-3 font-medium hover:bg-background">
+              Shipping labels
+            </button>
+            <button type="submit" name="docs" value="slip" className="inline-flex h-8 items-center rounded-md border border-border bg-surface px-3 font-medium hover:bg-background">
+              Packing slips
+            </button>
+            <button type="submit" name="docs" value="invoice,slip,label,thanks" className="inline-flex h-8 items-center rounded-md bg-foreground px-3 font-medium text-background hover:bg-foreground/90">
+              All documents
+            </button>
+          </div>
           <Table caption="Orders">
             <thead>
               <tr>
+                <th scope="col" className={`${th} w-8`}>
+                  <span className="sr-only">Select</span>
+                </th>
                 <th scope="col" className={th}>
                   Order
                 </th>
@@ -98,6 +113,9 @@ export default async function OrdersPage({ searchParams }: PageProps<"/dashboard
                 const name = typeof addr.name === "string" ? addr.name : null;
                 return (
                   <tr key={o.id} className="hover:bg-background">
+                    <td className={td}>
+                      <input type="checkbox" name="ids" value={o.id} aria-label={`Select order ${orderNumberLabel(o.order_number, store.order_prefix)}`} />
+                    </td>
                     <td className={td}>
                       <Link href={`/dashboard/orders/${o.id}`} className="font-medium text-accent hover:underline">
                         {orderNumberLabel(o.order_number, store.order_prefix)}
@@ -127,7 +145,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/dashboard
             </tbody>
           </Table>
           <Pagination page={f.page} pageSize={ORDERS_PAGE_SIZE} total={total} basePath="/dashboard/orders" params={params} />
-        </>
+        </form>
       )}
     </div>
   );

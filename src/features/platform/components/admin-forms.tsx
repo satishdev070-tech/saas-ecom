@@ -46,10 +46,15 @@ export function TenantStatusForm({ tenantId, status }: { tenantId: string; statu
   );
 }
 
-export function ChangePlanForm({ tenantId, planId, plans }: { tenantId: string; planId: string | null; plans: Opt[] }) {
+export function ChangePlanForm({ tenantId, planId, plans, onTrial = false }: { tenantId: string; planId: string | null; plans: Opt[]; onTrial?: boolean }) {
   return (
     <ActionDialog action={changeTenantPlanAction} fields={{ tenantId }} title="Change plan" triggerLabel="Change plan" confirmLabel="Save" success="Plan updated.">
-      {(e) => <SelectField label="Plan" name="planId" defaultValue={planId ?? ""} options={[{ value: "", label: "Choose…" }, ...plans]} errors={e.planId} />}
+      {(e) => (
+        <>
+          <SelectField label="Plan" name="planId" defaultValue={planId ?? ""} options={[{ value: "", label: "Choose…" }, ...plans]} errors={e.planId} />
+          {onTrial ? <CheckboxField label="End the free trial now (set status to Active)" name="activate" value="true" hint="Otherwise the store stays on trial and the seller keeps seeing the free-trial banner." /> : null}
+        </>
+      )}
     </ActionDialog>
   );
 }

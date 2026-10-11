@@ -534,10 +534,10 @@ export function CodForm({ v }: { v: { enabled: boolean; fee: string; minOrder: s
   );
 }
 
-export function CheckoutOptionsForm({ v, locationAvailable }: { v: { guestCheckout: boolean; locationAutofill: boolean }; locationAvailable: boolean }) {
+export function CheckoutOptionsForm({ v, locationAvailable, thankYouNote, defaultThankYou }: { v: { guestCheckout: boolean; locationAutofill: boolean }; locationAvailable: boolean; thankYouNote: string; defaultThankYou: string }) {
   return (
     <ActionForm action={saveCheckoutOptionsAction} submitLabel="Save checkout settings">
-      {() => (
+      {(e) => (
         <div className="space-y-3">
           <CheckboxField
             label="Allow guest checkout"
@@ -552,6 +552,15 @@ export function CheckoutOptionsForm({ v, locationAvailable }: { v: { guestChecko
             value="true"
             defaultChecked={v.locationAutofill}
             hint={locationAvailable ? "Fills area, city, state and PIN code from the shopper's device location, with their permission. Nothing is stored." : "Currently switched off for all stores by the platform."}
+          />
+          <TextAreaField
+            label="Thank-you card message"
+            name="thankYouNote"
+            rows={3}
+            defaultValue={thankYouNote}
+            placeholder={defaultThankYou}
+            hint="Printed on the thank-you card you put in each parcel (Orders → Print). Use {name} for the customer's first name and {store} for your store name. Leave blank for the default shown."
+            errors={e.thankYouNote}
           />
         </div>
       )}

@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { saveProductAction } from "@/features/catalog/actions";
 import type { ProductDraft } from "@/features/catalog/types";
 import type { OptionDraft, VariantDraft } from "@/features/catalog/variants";
+import { discountPercent, priceFromDiscount } from "@/features/catalog/discount";
 import { cleanOptions, emptyVariant, generateVariantMatrix, slugify, suggestSku, variantTitle } from "@/features/catalog/variants";
 import { OCCASIONS, OPTION_NAME_SUGGESTIONS, PRODUCT_STATUS_LABELS, PRODUCT_TYPE_LABELS, PRODUCT_TYPES, PRODUCT_STATUSES, SIZE_PRESETS } from "@/features/catalog/constants";
 import { Card } from "@/components/ui/layout";
@@ -195,15 +196,16 @@ export function ProductEditor({
             </div>
           </Card>
 
-          <Card title={`Variants (${d.variants.length})`} description="Prices in ₹. MRP must be at least the price.">
+          <Card title={`Variants (${d.variants.length})`} description="Prices in ₹. MRP must be at least the price. Enter a % off to set the price from the MRP; shoppers see the MRP struck through with the saving.">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-sm">
+              <table className="w-full min-w-[840px] text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase text-muted">
                     <th className="py-2 pr-2">Variant</th>
                     <th className="py-2 pr-2">SKU</th>
                     <th className="py-2 pr-2">Price</th>
                     <th className="py-2 pr-2">MRP</th>
+                    <th className="py-2 pr-2" title="Discount off MRP. Typing a % sets the price from the MRP.">% off</th>
                     <th className="py-2 pr-2">Weight (g)</th>
                     <th className="py-2 pr-2">{d.id ? "Stock" : canWriteInventory ? "Opening stock" : "Stock"}</th>
                     <th className="py-2 pr-2">Track</th>
@@ -222,6 +224,27 @@ export function ProductEditor({
                       </td>
                       <td className="py-2 pr-2">
                         <input aria-label="MRP" inputMode="decimal" className={input} value={v.compareAtPrice} onChange={(e) => setVariant(i, { compareAtPrice: e.target.value })} />
+                      </td>
+                      <td className="w-20 py-2 pr-2">
+                        <input
+                          aria-label="Discount % off MRP"
+                          inputMode="decimal"
+                          className={input}
+                          placeholder={v.compareAtPrice ? "0" : "MRP?"}
+                          disabled={!v.compareAtPrice}
+                          key={`${v.price}|${v.compareAtPrice}`}
+                          defaultValue={discountPercent(v.price, v.compareAtPrice)}
+                          onBlur={(e) => {
+                            const next = priceFromDiscount(v.compareAtPrice, e.target.value);
+                            if (next) setVariant(i, { price: next });
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              (e.target as HTMLInputElement).blur();
+                            }
+                          }}
+                        />
                       </td>
                       <td className="py-2 pr-2">
                         <input aria-label="Weight in grams" inputMode="numeric" className={input} value={v.weightGrams} onChange={(e) => setVariant(i, { weightGrams: e.target.value })} />
@@ -250,6 +273,17 @@ export function ProductEditor({
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 <button type="button" className="text-accent underline" onClick={() => set({ variants: d.variants.map((v) => ({ ...v, price: d.variants[0]!.price, compareAtPrice: d.variants[0]!.compareAtPrice })) })}>
                   Copy first price & MRP to all
+                </button>
+                <button
+                  type="button"
+                  className="text-accent underline"
+                  onClick={() => {
+                    const pct = window.prompt("Discount for every size, as % off MRP (e.g. 20):");
+                    if (pct === null) return;
+                    set({ variants: d.variants.map((v) => ({ ...v, price: priceFromDiscount(v.compareAtPrice, pct) ?? v.price })) });
+                  }}
+                >
+                  Set % off MRP on all
                 </button>
               </div>
             ) : null}

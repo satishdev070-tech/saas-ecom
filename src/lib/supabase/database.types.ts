@@ -3626,6 +3626,7 @@ export type Database = {
           launch_status: string;
           launched_at: string | null;
           checkout_settings: Json;
+          festive_settings: Json;
         };
         Insert: {
           tenant_id: string;
@@ -3656,6 +3657,7 @@ export type Database = {
           launch_status?: string;
           launched_at?: string | null;
           checkout_settings?: Json;
+          festive_settings?: Json;
         };
         Update: {
           tenant_id?: string;
@@ -3686,6 +3688,7 @@ export type Database = {
           launch_status?: string;
           launched_at?: string | null;
           checkout_settings?: Json;
+          festive_settings?: Json;
         };
         Relationships: [
           {

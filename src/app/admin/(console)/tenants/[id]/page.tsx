@@ -101,7 +101,7 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
           <>
             {manage && superAdmin && owner?.email && t.status !== "cancelled" ? <LoginAsStoreButton tenantId={id} ownerEmail={owner.email} /> : null}
             {manage ? <TenantStatusForm tenantId={id} status={t.status} /> : null}
-            {manage ? <ChangePlanForm tenantId={id} planId={t.planId} plans={plans.map((p) => ({ value: p.id, label: p.name }))} /> : null}
+            {manage ? <ChangePlanForm tenantId={id} planId={t.planId} onTrial={t.status === "trial"} plans={plans.map((p) => ({ value: p.id, label: p.name }))} /> : null}
             {manage && t.status === "trial" ? <ExtendTrialForm tenantId={id} /> : null}
             {canSupport ? (
               session ? (

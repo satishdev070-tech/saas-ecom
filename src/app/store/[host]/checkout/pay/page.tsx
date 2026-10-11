@@ -16,6 +16,8 @@ export default async function PayPage({ params, searchParams }: PageProps<"/stor
   const page = token ? await loadPayPage(sf.tenant.tenantId, sf.store.name, token) : null;
   if (!page) notFound();
   if (page.state === "paid") redirect(page.redirectTo);
+  const via = typeof sp.via === "string" ? sp.via : null;
+  const preferred = page.state === "choose" && page.gateways.some((g) => g.id === via) ? via : null;
   return (
     <div className="sf-container sf-section mx-auto max-w-md space-y-6 text-center">
       <h1 className="sf-heading text-3xl">Complete your payment</h1>
@@ -30,7 +32,9 @@ export default async function PayPage({ params, searchParams }: PageProps<"/stor
       {page.state === "choose" ? (
         <GatewayPicker
           token={token}
-          gateways={page.gateways}
+          // The gateway chosen at checkout (?via=) goes first and starts automatically.
+          gateways={preferred ? [...page.gateways.filter((g) => g.id === preferred), ...page.gateways.filter((g) => g.id !== preferred)] : page.gateways}
+          autoStart={Boolean(preferred) && !sp.error && !page.lastError}
           amountMinor={page.order.grandTotal}
           storeName={page.storeName}
           orderNumber={page.order.number}

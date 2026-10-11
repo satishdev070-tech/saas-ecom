@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { completeTestPaymentAction, confirmRazorpayPaymentAction, startGatewayPaymentAction } from "@/features/checkout/actions";
 import { formatMoney } from "@/lib/money";
@@ -46,6 +46,7 @@ export function GatewayPicker({
   orderNumber,
   prefill,
   lastError,
+  autoStart = false,
 }: {
   token: string;
   gateways: { id: "razorpay" | "cashfree" | "payu"; label: string; description: string }[];
@@ -54,6 +55,7 @@ export function GatewayPicker({
   orderNumber: string;
   prefill: { name?: string | null; email?: string | null; contact?: string | null };
   lastError: string | null;
+  autoStart?: boolean;
 }) {
   const router = useRouter();
   const [choice, setChoice] = useState(gateways[0]!.id);
@@ -128,6 +130,19 @@ export function GatewayPicker({
     rzp.open();
     setStatus("idle");
   }
+
+  // Gateway picked at checkout: start it straight away (once), so the shopper doesn't choose twice.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!autoStart || started.current) return;
+    const t = window.setTimeout(() => {
+      if (started.current) return;
+      started.current = true;
+      void pay();
+    }, 0);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, [autoStart]);
 
   const busy = status !== "idle";
   return (

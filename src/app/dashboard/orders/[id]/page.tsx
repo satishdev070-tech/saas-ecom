@@ -71,14 +71,20 @@ export default async function OrderDetailPage({ params }: PageProps<"/dashboard/
         actions={
           <>
             {d.invoice ? (
-              <Link href={`/dashboard/orders/${o.id}/invoice`} className={linkBtn}>
+              <Link href={`/print/orders?ids=${o.id}&docs=invoice`} className={linkBtn}>
                 Invoice {d.invoice.invoice_number}
               </Link>
             ) : canWrite && o.status !== "pending" && o.status !== "cancelled" ? (
               <IssueInvoiceButton orderId={o.id} />
             ) : null}
-            <Link href={`/dashboard/orders/${o.id}/packing-slip`} className={linkBtn}>
+            <Link href={`/print/orders?ids=${o.id}&docs=label`} className={linkBtn}>
+              Shipping label
+            </Link>
+            <Link href={`/print/orders?ids=${o.id}&docs=slip`} className={linkBtn}>
               Packing slip
+            </Link>
+            <Link href={`/print/orders?ids=${o.id}&docs=invoice,slip,label,thanks`} className={`${linkBtn} bg-foreground text-background hover:bg-foreground/90`} title="Invoice, packing slip, shipping label and thank-you card">
+              Print all
             </Link>
             {canWrite && cancellable ? <CancelOrderButton orderId={o.id} paid={paid} /> : null}
           </>

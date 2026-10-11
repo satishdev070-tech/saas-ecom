@@ -24,6 +24,14 @@ export default async function StoreSettingsPage() {
   return (
     <div>
       <PageHeader title="Store details" description="Your brand, contact information and invoice details." />
+      <BrandChecklist
+        items={[
+          { label: "Logo", done: Boolean(s.logo_path), href: "#logo", hint: "Shown in your store header, invoices and labels" },
+          { label: "Favicon", done: Boolean(s.favicon_path), href: "#favicon", hint: "The small icon in the browser tab" },
+          { label: "Social share image", done: Boolean((s.seo as { og_image_path?: string } | null)?.og_image_path), href: "/dashboard/settings/seo", hint: "Shown when your store link is shared on WhatsApp, Instagram or Facebook" },
+          { label: "Social media links", done: Object.values(social).some(Boolean), href: "#f-instagram", hint: "Instagram, Facebook, YouTube… shown in your store footer" },
+        ]}
+      />
       {can(ctx, "settings.write") ? (
         <StoreDetailsForm v={v} logoUrl={assetUrl(s.logo_path)} faviconUrl={assetUrl(s.favicon_path)} />
       ) : (
@@ -44,5 +52,34 @@ export default async function StoreSettingsPage() {
         </section>
       ) : null}
     </div>
+  );
+}
+
+/** At-a-glance brand setup with links to each field (logo/favicon/socials below, share image under SEO). */
+function BrandChecklist({ items }: { items: { label: string; done: boolean; href: string; hint: string }[] }) {
+  const left = items.filter((i) => !i.done).length;
+  return (
+    <section aria-labelledby="brand-setup" className="mb-6 rounded-lg border border-border bg-surface p-4">
+      <h2 id="brand-setup" className="text-h3 font-semibold">
+        Brand & sharing {left ? <span className="text-small font-normal text-muted">· {left} to set up</span> : <span className="text-small font-normal text-success">· all set</span>}
+      </h2>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {items.map((i) => (
+          <li key={i.label}>
+            <a href={i.href} className="flex items-start gap-2 rounded-md p-2 hover:bg-surface-secondary">
+              <span aria-hidden className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-bold ${i.done ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+                {i.done ? "✓" : "!"}
+              </span>
+              <span>
+                <span className="block text-small font-medium">
+                  {i.label} <span className="sr-only">{i.done ? "(set)" : "(not set)"}</span>
+                </span>
+                <span className="block text-caption text-muted">{i.hint}</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

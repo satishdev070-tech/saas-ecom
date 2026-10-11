@@ -22,3 +22,9 @@ export const checkoutOptionsSchema = z.object({ guestCheckout: checkbox, locatio
 export function toCheckoutSettingsJson(o: CheckoutOptions): { guest_checkout: boolean; location_autofill: boolean } {
   return { guest_checkout: o.guestCheckout, location_autofill: o.locationAutofill };
 }
+
+/** Seller's thank-you card message (checkout_settings.thank_you_note); null = the default. */
+export function parseThankYouNote(raw: unknown): string | null {
+  const v = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>).thank_you_note : null;
+  return typeof v === "string" && v.trim() ? v.trim().slice(0, 600) : null;
+}

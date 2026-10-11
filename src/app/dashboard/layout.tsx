@@ -13,6 +13,26 @@ import { getDashboardAlerts } from "@/features/dashboard-ui/alerts";
 import { storeOrigin, storeSubdomain } from "@/lib/platform/urls";
 import { roleLabel } from "@/lib/permissions/labels";
 import { cookies } from "next/headers";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+/** Plan name and trial end of the active store (RLS: members read their tenant). Null on error. */
+async function trialInfo(tenantId: string): Promise<{ plan: string | null; endsAt: string | null } | null> {
+  const { data } = await (await createSupabaseServerClient()).from("tenants").select("trial_ends_at, plans(name)").eq("id", tenantId).maybeSingle();
+  if (!data) return null;
+  const plan = (data as { plans: { name: string } | { name: string }[] | null }).plans;
+  return { plan: (Array.isArray(plan) ? plan[0]?.name : plan?.name) ?? null, endsAt: data.trial_ends_at };
+}
+
+/** "Free trial of the Scale plan · 9 days left (ends 20 Oct 2026)." Status stays "trial" until the platform activates the plan. */
+function trialMessage(t: { plan: string | null; endsAt: string | null } | null): string {
+  const of = t?.plan ? ` of the ${t.plan} plan` : "";
+  if (!t?.endsAt) return `You're on a free trial${of}.`;
+  const end = new Date(t.endsAt);
+  const days = Math.ceil((end.getTime() - Date.now()) / 86_400_000);
+  const date = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" }).format(end);
+  if (days < 0) return `Your free trial${of} ended on ${date}. Contact support to activate your plan.`;
+  return `You're on a free trial${of} · ${days === 0 ? "ends today" : `${days} day${days === 1 ? "" : "s"} left`} (ends ${date}).`;
+}
 import { SUPPORT_LOGIN_COOKIE, readSupportLogin } from "@/features/platform/server/store-admin";
 import { endSupportLoginAction } from "@/features/platform/store-admin-actions";
 
@@ -32,7 +52,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
   const ctx = await requireTenant();
   const groups = DASHBOARD_NAV.map((g) => ({ ...g, items: g.items.filter((i) => ctx.permissions.has(i.permission)) })).filter((g) => g.items.length);
   const storeUrl = storeOrigin(storeSubdomain(ctx.tenantSlug));
-  const alerts = await getDashboardAlerts(ctx);
+  const [alerts, trial] = await Promise.all([getDashboardAlerts(ctx), ctx.tenantStatus === "trial" ? trialInfo(ctx.tenantId) : Promise.resolve(null)]);
   const alertTotal = alerts.reduce((s, a) => s + a.count, 0);
   const displayName = ctx.user.displayName ?? ctx.user.email ?? "Account";
 
@@ -151,7 +171,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
       </div>
     ) : ctx.tenantStatus === "trial" ? (
       <div className="border-b border-border bg-accent-soft px-5 py-2 text-small text-foreground">
-        You&apos;re on a free trial.{" "}
+        {trialMessage(trial)}{" "}
         <Link href="/dashboard/settings" className="font-medium underline underline-offset-2">
           Review store settings
         </Link>
