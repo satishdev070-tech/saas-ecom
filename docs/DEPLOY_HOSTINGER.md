@@ -5,11 +5,12 @@ compiler (`GLIBC_2.29 not found`) and falls back to the WebAssembly one. Two con
 
 1. The config must be plain JavaScript: **`next.config.mjs`** (a `next.config.ts` fails with
    "Cannot find module … next.config").
-2. Turbopack (the default `next build`) needs the native compiler, so build with **webpack**:
-   **`pnpm run build:webpack`** (`next build --webpack`). Verified: this builds and serves with only
-   the WebAssembly compiler available (about 3 minutes).
-
-Vercel keeps using `pnpm run build` (Turbopack).
+2. Turbopack (the default bundler) needs the native compiler. **`pnpm run build`
+   (`scripts/build.mjs`) detects this** (glibc older than 2.29, or the native compiler fails to
+   load) and builds with webpack instead; everywhere else, including Vercel, it uses Turbopack.
+   Hostinger doesn't let you change the build command, so no setting is needed. Force either with
+   `NEXT_BUNDLER=webpack` or `NEXT_BUNDLER=turbopack`. Verified: with the native compiler hidden,
+   `pnpm run build` picks webpack and builds; `next start` serves the result.
 
 ## hPanel settings
 
@@ -17,7 +18,7 @@ Vercel keeps using `pnpm run build` (Turbopack).
 |---|---|
 | Node.js | 20 (or 22) |
 | Package manager | pnpm |
-| Build command | `pnpm run build:webpack` |
+| Build command | `pnpm run build` (default; picks webpack automatically) |
 | Start command | `pnpm start` (`next start`, listens on `$PORT`) |
 | Output directory | `.next` |
 
