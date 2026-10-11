@@ -20,3 +20,15 @@ Feature flags added in phase 3 (per plan, overridable per store): `payments_cash
 `payments_payu`, `delhivery`, `theme_marketplace`, `google_analytics`, `google_ads`, `meta_pixel`,
 `social_media`, `creative_studio`. All are checked server-side in the action or service, not only
 in the UI.
+
+## Store administration (2026-10-11)
+
+| Feature | Where | Who |
+|---|---|---|
+| **Create store** with full control: existing or **new** owner account (name, optional password, or emailed set-password link), plan, trial or active, trial length, industry, store type (real/demo/test), contact email/phone, marketplace theme (draft or published), coming-soon or live, welcome email via Resend | `/admin/tenants/new` | `platform.tenants.manage` (new accounts: super admin) |
+| **Reset password**: one-time reset link emailed via Resend and shown once to copy | Store → Team → Reset password | `platform.tenants.manage` |
+| **Set password** directly (optional "password changed" email; the password is never emailed or logged) | Store → Team → Set password | super admin |
+| **Log in as store** (owner) or as any member: opens the seller dashboard with their access; banner + "End support sign-in" | Store header → Log in as store; Team → Sign in as | super admin |
+
+All of them need a reason where they touch an account, are rate limited and audited in the store's log. Platform staff
+accounts can't be targeted. See ADR-033.

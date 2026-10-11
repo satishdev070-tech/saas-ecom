@@ -70,6 +70,15 @@ export const serverEnvSchema = publicEnvSchema.extend({
   CRON_SECRET: z.string().min(24).optional(),
   /** Transactional email (Resend). When unset, emails are logged instead of sent. */
   RESEND_API_KEY: z.string().min(10).optional(),
+  /**
+   * Supabase Auth "Send Email" hook secret (Authentication → Hooks), format `v1,whsec_<base64>`.
+   * When set, /api/auth/email-hook sends every auth email (confirm, reset, magic link, invite,
+   * email change) through Resend with platform/store branding instead of Supabase's mailer.
+   */
+  SEND_EMAIL_HOOK_SECRET: z
+    .string()
+    .regex(/^v1,whsec_[A-Za-z0-9+/=]{16,}$/, "must look like v1,whsec_… (copy it from Supabase → Authentication → Hooks)")
+    .optional(),
   VERCEL_TOKEN: z.string().min(10).optional(),
   VERCEL_PROJECT_ID: z.string().min(3).optional(),
   VERCEL_TEAM_ID: z.string().min(3).optional(),

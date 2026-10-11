@@ -8,6 +8,7 @@ import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/observability/logger";
 import { assertPlatformPermission, type PlatformContext } from "@/lib/platform/access";
 import type { Json } from "@/lib/supabase/database.types";
+import { listResendDomains, senderDomain } from "@/lib/email/resend";
 import {
   AI_PROVIDERS,
   APP_PROVIDERS,
@@ -132,4 +133,31 @@ export async function getEmailProviderStatus(ctx: PlatformContext): Promise<AppC
   const [cred, row] = await Promise.all([getAppCredential("resend"), loadRow("resend")]);
   const dbFrom = cleanExtra("resend", row?.extra).from ?? null;
   return { ...toStatus("resend", cred, row), from: cred?.extra.from ?? dbFrom ?? serverEnv().EMAIL_FROM, dbFrom };
+}
+
+/** Resend domain check + Supabase auth-email hook state + recent sends, for Admin → Email. */
+export async function getEmailDeliveryOverview(ctx: PlatformContext) {
+  assertPlatformPermission(ctx, "platform.settings.manage");
+  // Dynamic: lib/email/send imports this module (getAppCredential).
+  const { resolveEmailProvider } = await import("@/lib/email/send");
+  const provider = await resolveEmailProvider();
+  const domains = provider.apiKey ? await listResendDomains(provider.apiKey) : null;
+  const fromDomain = senderDomain(provider.from);
+  const admin = createSupabaseAdminClient();
+  const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const [recent, week] = await Promise.all([
+    admin.from("email_log").select("kind, status, recipient_masked, error, created_at").order("created_at", { ascending: false }).limit(25),
+    admin.from("email_log").select("status").gte("created_at", since).limit(5000),
+  ]);
+  const counts: Record<string, number> = {};
+  for (const r of week.data ?? []) counts[r.status] = (counts[r.status] ?? 0) + 1;
+  return {
+    fromDomain,
+    domains,
+    fromDomainStatus: domains?.ok ? (domains.domains.find((d) => d.name === fromDomain)?.status ?? "missing") : null,
+    authHookConfigured: Boolean(serverEnv().SEND_EMAIL_HOOK_SECRET),
+    recent: recent.data ?? [],
+    weekCounts: counts,
+    logAvailable: !recent.error,
+  };
 }

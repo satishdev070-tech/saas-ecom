@@ -41,9 +41,17 @@ export async function saveIntegrationAction(_prev: ActionResult<string> | null, 
     const def = PROVIDERS[p];
     const values = Object.fromEntries(def.fields.map((f) => [f.key, typeof raw[f.key] === "string" ? raw[f.key]! : ""]));
     const environment = raw.environment === "live" ? "live" : "test";
+    const before = await loadIntegration(ctx.tenantId, p);
     await saveCredentials(ctx, p, values, environment);
     await rateLimit("integration-test", ctx.tenantId, 20, 600);
-    return testOutcome(await runTest(ctx.tenantId, ctx.user.id, p));
+    const message = testOutcome(await runTest(ctx.tenantId, ctx.user.id, p));
+    // First successful connection of a payment gateway switches it on, so it shows at checkout
+    // straight away. A gateway the seller switched off on purpose (connected before) stays off.
+    if (def.kind === "payment" && !before?.enabled && before?.status !== "connected") {
+      await setEnabled(ctx, p, true);
+      return `${message} ${def.label} is now switched on: shoppers can pay with it at checkout.`;
+    }
+    return message;
   });
   refresh();
   return result;

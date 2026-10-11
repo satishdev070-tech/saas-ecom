@@ -2,30 +2,39 @@ import "server-only";
 import { cache } from "react";
 import { logger } from "@/lib/observability/logger";
 import { getEntitlements } from "@/features/platform";
-import { onlinePaymentProvider, type OnlineProviderId } from "@/features/payments/credentials";
+import { onlinePaymentProviders, type OnlineProviderId } from "@/features/payments/credentials";
 
 export type PaymentOptions = {
   /** store-level COD switch AND the `cod` feature (per-order eligibility is decided by the pricing engine) */
   codOffered: boolean;
-  /** provider behind "Pay online", or null when online payment isn't available */
+  /** first provider behind "Pay online", or null when no online gateway is live */
   online: OnlineProviderId | null;
+  /** every gateway the shopper can pick from on the pay page */
+  gateways: OnlineProviderId[];
 };
 
 /**
- * Payment methods a host-resolved tenant offers. Feature flags come from the platform's
- * entitlements (override > plan > default); a flag lookup failure falls back to the defaults
- * (COD on, online on) rather than blocking checkout.
+ * Payment methods a host-resolved tenant offers.
+ *
+ * "Pay online" is offered when at least one gateway is live for the store: enabled by the seller,
+ * connection-tested, and allowed by that gateway's OWN feature flag (razorpay → online_payments,
+ * cashfree → payments_cashfree, payu → payments_payu; see integrations/registry). Each gateway is
+ * gated individually in activeIntegration(), so there is no extra global gate here. Previously the
+ * Razorpay flag gated all gateways, which hid Cashfree/PayU at checkout.
  */
 export const loadPaymentOptions = cache(async (tenantId: string, codEnabledInSettings: boolean): Promise<PaymentOptions> => {
   let codFlag = true;
-  let onlineFlag = true;
   try {
     const ent = await getEntitlements(tenantId);
     codFlag = ent.isEnabled("cod");
-    onlineFlag = ent.isEnabled("online_payments");
   } catch (err) {
     logger.warn("checkout.entitlements_unavailable", { tenantId, error: err });
   }
-  const online = onlineFlag ? await onlinePaymentProvider(tenantId) : null;
-  return { codOffered: codEnabledInSettings && codFlag, online };
+  let gateways: OnlineProviderId[] = [];
+  try {
+    gateways = await onlinePaymentProviders(tenantId);
+  } catch (err) {
+    logger.error("checkout.gateways_unavailable", { tenantId, error: err });
+  }
+  return { codOffered: codEnabledInSettings && codFlag, online: gateways[0] ?? null, gateways };
 });

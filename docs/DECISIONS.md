@@ -156,3 +156,21 @@ Marketplace themes are presets (tokens, layout, per-section style settings) appl
 
 ## ADR-032 — One SVG renderer for creative preview and output · Accepted
 Creative templates are data (layers + fields) rendered by one pure function to SVG: in the browser for preview, and rasterised with sharp on the server for the saved PNG. Standard serif/sans fonts are used in both, so output matches preview without shipping font files to the renderer.
+
+## ADR-033 — Super admin "Log in as store" · Accepted (amends ADR-027)
+Requested by the platform owner (2026-10-11): super admins can sign in **as** a store member (the owner by default) to fix things
+on the seller's behalf. Read-only support sessions (ADR-027) stay the default for support staff; this path is limited to the
+`super_admin` role with `platform.tenants.manage`, needs a written reason, and is audited in the store's log
+(`support.signed_in_as_member` / `support.signed_out_of_member`) before the session switches. Mechanism: Admin API magic-link
+hash → `verifyOtp` on the server, so no email is sent and no password is seen. A signed, httpOnly `bb_support_login` cookie
+(2 h) drives a dashboard banner naming the admin, with "End support sign-in" (signs out, back to `/admin/login`). Platform staff
+accounts can never be targeted (refused if the target has a `platform_memberships` row). Same guards apply to password resets
+(reset link for `platform.tenants.manage`; setting a password directly is super admin only; passwords are never logged or emailed).
+
+## ADR-034 — Auth emails through Resend via the Supabase Send Email hook · Accepted
+Instead of Supabase's mailer (or SMTP), Supabase calls `POST /api/auth/email-hook` (Standard Webhooks signature,
+`SEND_EMAIL_HOOK_SECRET`). We build the token-hash link on the callback that started the flow (platform `/auth/callback`
+or the store's `/account/auth/callback`, both accept `token_hash`), only for hosts we serve (platform or a verified store
+host; anything else falls back to `/auth/confirm`), brand it (store name/logo for shoppers, platform for sellers) and send it
+through `sendEmail()` (Resend, `email_log`, idempotency). If the email can't be sent we return an error to Supabase so the
+user sees a failure rather than waiting for a mail that never comes.

@@ -250,3 +250,57 @@ export const domainFilterSchema = pagination.extend({
   status: z.enum(["pending", "verified", "failed", "removed"]).optional().catch(undefined),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
 });
+
+// ---- Store administration (create with owner, account access) ------------------------
+
+const strongPassword = z
+  .string()
+  .min(10, "Use at least 10 characters")
+  .max(72, "Use at most 72 characters")
+  .refine((v) => /[a-z]/.test(v) && /[A-Z]/.test(v) && /\d/.test(v), "Use upper- and lower-case letters and a number");
+const optionalText = (max: number) => z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().trim().max(max).optional());
+const optionalPassword = z.preprocess((v) => (v === "" || v === null ? undefined : v), strongPassword.optional());
+
+/** Super admin → New store: full control over owner, plan, status, industry, theme and launch. */
+export const adminCreateStoreSchema = z
+  .object({
+    ownerMode: z.enum(["existing", "new"]).default("existing"),
+    ownerEmail: email,
+    ownerName: optionalText(120),
+    ownerPassword: optionalPassword,
+    name: z.string().trim().min(2, "Enter the store name").max(120),
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .refine(isValidStoreSlug, "Use 3-63 lowercase letters, numbers or single hyphens (some names are reserved)"),
+    planId: optionalUuid,
+    status: z.enum(["trial", "active"]).default("trial"),
+    trialDays: z.preprocess((v) => (v === "" || v === null || v === undefined ? undefined : v), z.coerce.number().int().min(1, "At least 1 day").max(365, "At most 365 days").optional()),
+    category: optionalText(40),
+    storeType: z.enum(["real", "demo", "test"]).default("real"),
+    storeEmail: z.preprocess((v) => (v === "" || v === null ? undefined : v), email.optional()),
+    storePhone: z.preprocess((v) => (v === "" || v === null ? undefined : v), z.string().trim().regex(/^[0-9+\-\s]{8,16}$/, "Enter a valid phone number").optional()),
+    themeKey: optionalText(60),
+    launch: z.enum(["draft", "live"]).default("draft"),
+    publishTheme: checkbox,
+    notifyOwner: checkbox,
+  })
+  .superRefine((v, ctx) => {
+    if (v.ownerMode === "new" && !v.ownerName) ctx.addIssue({ code: "custom", path: ["ownerName"], message: "Enter the owner's name" });
+    if (v.ownerMode === "existing" && v.ownerPassword) ctx.addIssue({ code: "custom", path: ["ownerPassword"], message: "Only set a password when creating a new account" });
+    if (v.ownerMode === "new" && !v.ownerPassword && !v.notifyOwner) ctx.addIssue({ code: "custom", path: ["ownerPassword"], message: "Set a password, or tick “Email the owner” so they can set one" });
+    if (v.status === "active" && v.trialDays) ctx.addIssue({ code: "custom", path: ["trialDays"], message: "Trial days only apply to stores on a trial" });
+  });
+export type AdminCreateStoreInput = z.infer<typeof adminCreateStoreSchema>;
+
+/** A member of a store (target of password reset / sign-in as). */
+export const storeMemberSchema = z.object({ tenantId: z.uuid(), userId: z.uuid() });
+
+export const adminSetPasswordSchema = storeMemberSchema
+  .extend({ password: strongPassword, confirm: z.string(), reason, notify: checkbox })
+  .refine((v) => v.password === v.confirm, { path: ["confirm"], message: "Passwords don't match" });
+
+export const adminResetLinkSchema = storeMemberSchema.extend({ reason });
+
+export const loginAsStoreSchema = z.object({ tenantId: z.uuid(), userId: optionalUuid, reason });

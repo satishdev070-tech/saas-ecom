@@ -20,6 +20,7 @@ export const DASHBOARD_NAV: { label: string; items: TenantNavItem[] }[] = [
     label: "Commerce",
     items: [
       { href: "/dashboard/orders", label: "Orders", permission: "orders.read", icon: "orders" },
+      { href: "/dashboard/payments", label: "Payments", permission: "orders.read", icon: "payments" },
       { href: "/dashboard/returns", label: "Returns", permission: "orders.read", icon: "returns" },
       { href: "/dashboard/products", label: "Products", permission: "catalog.read", icon: "products" },
       { href: "/dashboard/collections", label: "Collections", permission: "catalog.read", icon: "collections" },
