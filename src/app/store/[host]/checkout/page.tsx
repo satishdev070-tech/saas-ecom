@@ -8,6 +8,7 @@ import { loadPaymentOptions } from "@/features/checkout/payment-options";
 import { getStoreCustomer } from "@/features/customer-account/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CheckoutForm } from "@/features/checkout/components/checkout-form";
+import { GATEWAY_LABELS } from "@/features/payments/checkout";
 import { getCheckoutOptions } from "@/features/checkout/server/options";
 import { googleSignInAvailable } from "@/features/auth/google";
 import { GoogleButton } from "@/components/auth/google-button";
@@ -65,6 +66,7 @@ export default async function CheckoutPage({ params }: PageProps<"/store/[host]/
         codOffered={payment.codOffered}
         onlineOffered={payment.online !== null}
         onlineVia={payment.gateways.filter((g) => g !== "manual").map((g) => GATEWAY_NAMES[g]).join(" / ") || null}
+        onlineGateways={payment.gateways.flatMap((g) => (g === "manual" ? [] : [{ id: g, ...GATEWAY_LABELS[g] }]))}
         prefill={{
           email: customer?.email ?? view.cart?.email ?? "",
           phone,

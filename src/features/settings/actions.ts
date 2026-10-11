@@ -1,5 +1,8 @@
 "use server";
 
+import { AppError } from "@/lib/errors";
+import { randomUUID } from "node:crypto";
+import { festiveCampaignSchema, MAX_FESTIVE_CAMPAIGNS, parseFestiveSettings, type FestiveCampaign } from "@/features/storefront/festive";
 import { checkoutOptionsSchema, toCheckoutSettingsJson } from "@/features/checkout/options";
 import { refresh } from "next/cache";
 import { z } from "zod";
@@ -144,8 +147,11 @@ export async function saveCodSettingsAction(_prev: ActionResult | null, fd: Form
 export async function saveCheckoutOptionsAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const result = await runAction("settings.checkout", async () => {
     const ctx = await settingsCtx();
-    const v = parseInput(checkoutOptionsSchema, formToObject(fd));
-    const { error } = await (await createSupabaseServerClient()).from("stores").update({ checkout_settings: toCheckoutSettingsJson(v) }).eq("tenant_id", ctx.tenantId);
+    const raw = formToObject(fd);
+    const v = parseInput(checkoutOptionsSchema, raw);
+    const { thankYouNote } = parseInput(z.object({ thankYouNote: z.string().trim().max(600, "Keep the message under 600 characters").optional() }), raw);
+    const settings = { ...toCheckoutSettingsJson(v), ...(thankYouNote ? { thank_you_note: thankYouNote } : {}) };
+    const { error } = await (await createSupabaseServerClient()).from("stores").update({ checkout_settings: settings }).eq("tenant_id", ctx.tenantId);
     if (error) throw mapDbError(error);
     await audit({ tenantId: ctx.tenantId, actorUserId: ctx.user.id, action: "settings.checkout_updated", entityType: "store", entityId: ctx.tenantId, metadata: { guest_checkout: v.guestCheckout, location_autofill: v.locationAutofill } });
     revalidateStorefront(ctx.tenantId);
@@ -218,6 +224,50 @@ export async function saveSeoSettingsAction(_prev: ActionResult | null, fd: Form
     const { error } = await supabase.from("stores").update({ seo }).eq("tenant_id", ctx.tenantId);
     if (error) throw mapDbError(error);
     await audit({ tenantId: ctx.tenantId, actorUserId: ctx.user.id, action: "settings.seo_updated", entityType: "store", entityId: ctx.tenantId, metadata: { noindex: v.noindex, og_image: Boolean(ogPath) } });
+    revalidateStorefront(ctx.tenantId);
+  });
+  if (result.ok) refresh();
+  return result;
+}
+
+// ---- Festive vibes (stores.festive_settings, migration 2800) ---------------------------------
+
+async function readFestive(tenantId: string): Promise<FestiveCampaign[]> {
+  const { data, error } = await (await createSupabaseServerClient()).from("stores").select("festive_settings").eq("tenant_id", tenantId).maybeSingle();
+  if (error) throw new AppError("VALIDATION", { fieldErrors: { _form: ["Festive vibes need a database update first (supabase/dev/apply-2800.sql)."] }, context: { db: error.message } });
+  return parseFestiveSettings(data?.festive_settings);
+}
+
+async function writeFestive(tenantId: string, campaigns: FestiveCampaign[]) {
+  const { error } = await (await createSupabaseServerClient()).from("stores").update({ festive_settings: { campaigns } }).eq("tenant_id", tenantId);
+  if (error) throw mapDbError(error);
+}
+
+export async function saveFestiveCampaignAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const result = await runAction("settings.festive.save", async () => {
+    const ctx = await settingsCtx();
+    const raw = formToObject(fd);
+    const id = typeof raw.id === "string" && /^[a-z0-9]{6,24}$/.test(raw.id) ? raw.id : randomUUID().replaceAll("-", "").slice(0, 12);
+    const on = (k: string) => raw[k] === "true" || raw[k] === "on";
+    const c = parseInput(festiveCampaignSchema, { id, preset: raw.preset, start: raw.start, end: raw.end, message: raw.message ?? "", link: raw.link ?? "", banner: on("banner"), garland: on("garland"), petals: on("petals") });
+    const list = await readFestive(ctx.tenantId);
+    const next = list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c];
+    if (next.length > MAX_FESTIVE_CAMPAIGNS) throw new AppError("VALIDATION", { fieldErrors: { _form: [`You can schedule up to ${MAX_FESTIVE_CAMPAIGNS} festive looks. Delete an old one first.`] } });
+    await writeFestive(ctx.tenantId, next.sort((a, b) => (a.start < b.start ? -1 : 1)));
+    await audit({ tenantId: ctx.tenantId, actorUserId: ctx.user.id, action: "settings.festive_saved", entityType: "store", entityId: ctx.tenantId, metadata: { preset: c.preset, start: c.start, end: c.end } });
+    revalidateStorefront(ctx.tenantId);
+  });
+  if (result.ok) refresh();
+  return result;
+}
+
+export async function deleteFestiveCampaignAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const result = await runAction("settings.festive.delete", async () => {
+    const ctx = await settingsCtx();
+    const { id } = parseInput(z.object({ id: z.string().regex(/^[a-z0-9]{6,24}$/) }), formToObject(fd));
+    const list = await readFestive(ctx.tenantId);
+    await writeFestive(ctx.tenantId, list.filter((x) => x.id !== id));
+    await audit({ tenantId: ctx.tenantId, actorUserId: ctx.user.id, action: "settings.festive_deleted", entityType: "store", entityId: ctx.tenantId, metadata: { id } });
     revalidateStorefront(ctx.tenantId);
   });
   if (result.ok) refresh();

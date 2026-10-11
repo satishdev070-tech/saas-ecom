@@ -17,6 +17,8 @@ export const checkoutSchema = addressSchema.extend({
   contactPhone: indianMobile,
   shippingRateId: shippingRateId.optional(),
   paymentMethod: z.enum(["cod", "online"], { message: "Choose a payment method" }),
+  /** Online gateway the shopper picked at checkout (only a preference: the pay page re-checks it's live). */
+  gateway: z.enum(["razorpay", "cashfree", "payu"]).optional().catch(undefined),
   acceptsMarketing: bool.default(false),
   whatsappOptIn: bool.default(false),
   saveAddress: bool.default(false),

@@ -3,7 +3,8 @@ import { can, requireTenantPermission } from "@/lib/tenant/membership";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, PageHeader } from "@/components/ui/layout";
 import { CheckoutOptionsForm } from "@/features/dashboard-ui/forms";
-import { parseCheckoutOptions } from "@/features/checkout/options";
+import { parseCheckoutOptions, parseThankYouNote } from "@/features/checkout/options";
+import { DEFAULT_THANK_YOU } from "@/features/orders-admin/print/documents";
 import { getPublicPlatformConfig } from "@/features/platform/server/public-config";
 
 export const metadata: Metadata = { title: "Checkout" };
@@ -21,7 +22,7 @@ export default async function CheckoutSettingsPage() {
       <PageHeader title="Checkout" description="How shoppers check out on your store. Payments and COD are set under Payments and Shipping & COD." />
       <Card title="Checkout options">
         {can(ctx, "settings.write") ? (
-          <CheckoutOptionsForm v={options} locationAvailable={platform.locationAutofill} />
+          <CheckoutOptionsForm v={options} locationAvailable={platform.locationAutofill} thankYouNote={error ? "" : (parseThankYouNote(store?.checkout_settings) ?? "")} defaultThankYou={DEFAULT_THANK_YOU} />
         ) : (
           <ul className="space-y-1 text-small">
             <li>Guest checkout: {options.guestCheckout ? "allowed" : "sign-in required"}</li>

@@ -46,7 +46,9 @@ export async function placeOrderAction(_prev: ActionResult<{ redirectTo: string 
     await rateLimit("checkout:place:email", input.email, 8, 600);
     const tenant = await requireStoreTenant();
     const placed = await placeOrder(tenant, input);
-    return { redirectTo: placed.redirectTo };
+    // Carry the gateway chosen at checkout to the pay page, which pre-selects and starts it.
+    const via = input.paymentMethod === "online" && input.gateway && placed.redirectTo.startsWith("/checkout/pay") ? `&via=${input.gateway}` : "";
+    return { redirectTo: `${placed.redirectTo}${via}` };
   });
   if (result.ok) redirect(result.data.redirectTo);
   return result;

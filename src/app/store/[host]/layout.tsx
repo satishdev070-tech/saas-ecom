@@ -14,6 +14,8 @@ import { getTrackingConfig } from "@/features/tracking/server/config";
 import { TrackingTags } from "@/features/tracking/components/tracking-tags";
 import { StoreUnavailable } from "./store-unavailable";
 import { ComingSoon } from "./coming-soon";
+import { getActiveFestive } from "@/features/storefront/server/festive";
+import { FestiveBelowHeader, FestiveTop } from "@/features/storefront/components/festive";
 import { DomainPending } from "./domain-pending";
 import { pendingDomainState } from "@/lib/tenant/directory";
 import { isHiddenDraft } from "@/features/stores/launch";
@@ -71,6 +73,8 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
   // preview cookie lets them see it. Fails open to "live" (features/stores/launch.ts).
   if (await isHiddenDraft(tenant.tenantId)) return <ComingSoon storeName={tenant.name} />;
   const ctx = await getRenderContext(host);
+  // Preview modes show the plain theme; festive looks only appear on the live storefront.
+  const festive = ctx.sf.preview || ctx.sf.themePreview ? null : await getActiveFestive(tenant.tenantId);
   const tracking = ctx.sf.preview || ctx.sf.themePreview ? null : await getTrackingConfig(tenant.tenantId);
   return (
     <div data-sf-root data-heading-align={ctx.sf.theme.tokens.sectionHeadingAlign} className="sf-root">
@@ -95,7 +99,9 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
           <PreviewEscapeBridge />
         </div>
       ) : null}
+      <FestiveTop c={festive} />
       <SectionList sections={ctx.sf.theme.layout.header} ctx={ctx} />
+      <FestiveBelowHeader c={festive} />
       <main id="main" className="flex-1">
         {children}
       </main>

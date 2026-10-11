@@ -31,11 +31,12 @@ function Field({ label, name, errors, className = "", ...rest }: { label: string
   );
 }
 
-export function CheckoutForm({ initial, prefill, codOffered, onlineOffered, onlineVia = null, signedIn, items = [], whatsappOptInStoreName = null, locationAutofill = false }: { initial: CheckoutSummary; prefill: Prefill; codOffered: boolean; onlineOffered: boolean; onlineVia?: string | null; signedIn: boolean; items?: AnalyticsItem[]; whatsappOptInStoreName?: string | null; locationAutofill?: boolean }) {
+export function CheckoutForm({ initial, prefill, codOffered, onlineOffered, onlineVia = null, onlineGateways = [], signedIn, items = [], whatsappOptInStoreName = null, locationAutofill = false }: { initial: CheckoutSummary; prefill: Prefill; codOffered: boolean; onlineOffered: boolean; onlineVia?: string | null; onlineGateways?: { id: "razorpay" | "cashfree" | "payu"; label: string; description: string }[]; signedIn: boolean; items?: AnalyticsItem[]; whatsappOptInStoreName?: string | null; locationAutofill?: boolean }) {
   const [summary, setSummary] = useState(initial);
   const [pin, setPin] = useState(prefill.postalCode);
   const [rateId, setRateId] = useState<string | undefined>(initial.shipping.selectedId ?? undefined);
   const [method, setMethod] = useState<"cod" | "online">(onlineOffered ? "online" : "cod");
+  const [gateway, setGateway] = useState(onlineGateways[0]?.id ?? "");
   const [quoting, startQuote] = useTransition();
   const [state, action, placing] = useActionState(placeOrderAction, null);
   const idempotencyKey = useMemo(() => crypto.randomUUID().replaceAll("-", ""), []);
@@ -189,15 +190,39 @@ export function CheckoutForm({ initial, prefill, codOffered, onlineOffered, onli
 
         <fieldset className="space-y-3">
           <legend className="sf-heading mb-2 text-2xl">Payment</legend>
-          {onlineOffered ? (
+          {/* The radios only drive state; the server reads paymentMethod + gateway from the hidden inputs. */}
+          <input type="hidden" name="paymentMethod" value={method} />
+          {method === "online" && gateway ? <input type="hidden" name="gateway" value={gateway} /> : null}
+          {onlineOffered && onlineGateways.length > 1 ? (
+            onlineGateways.map((g) => (
+              <label key={g.id} className="sf-border flex cursor-pointer items-start gap-2 rounded border p-3 text-sm has-[:checked]:border-[var(--sf-primary)]">
+                <input
+                  type="radio"
+                  name="payChoice"
+                  value={`online:${g.id}`}
+                  className="mt-0.5"
+                  checked={method === "online" && gateway === g.id}
+                  onChange={() => {
+                    setGateway(g.id);
+                    if (method !== "online") requote({ paymentMethod: "online" });
+                    setMethod("online");
+                  }}
+                />
+                <span>
+                  Online payment · <strong>{g.label}</strong>
+                  <span className="sf-muted block text-xs">{g.description}</span>
+                </span>
+              </label>
+            ))
+          ) : onlineOffered ? (
             <label className="sf-border flex cursor-pointer items-center gap-2 rounded border p-3 text-sm has-[:checked]:border-[var(--sf-primary)]">
-              <input type="radio" name="paymentMethod" value="online" checked={method === "online"} onChange={() => { setMethod("online"); requote({ paymentMethod: "online" }); }} />
+              <input type="radio" name="payChoice" value="online" checked={method === "online"} onChange={() => { setMethod("online"); requote({ paymentMethod: "online" }); }} />
               Pay online <span className="sf-muted">· UPI, cards, net banking, wallets{onlineVia ? ` · secured by ${onlineVia}` : ""}</span>
             </label>
           ) : null}
           {codOffered ? (
             <label className={`sf-border flex items-center gap-2 rounded border p-3 text-sm has-[:checked]:border-[var(--sf-primary)] ${summary.cod.available ? "cursor-pointer" : "opacity-50"}`}>
-              <input type="radio" name="paymentMethod" value="cod" disabled={!summary.cod.available} checked={method === "cod"} onChange={() => { setMethod("cod"); requote({ paymentMethod: "cod" }); }} />
+              <input type="radio" name="payChoice" value="cod" disabled={!summary.cod.available} checked={method === "cod"} onChange={() => { setMethod("cod"); requote({ paymentMethod: "cod" }); }} />
               Cash on delivery
               {summary.cod.fee > 0 ? <span className="sf-muted">· {formatMoney(summary.cod.fee)} fee</span> : null}
               {!summary.cod.available && summary.cod.reason ? <span className="sf-muted">· {summary.cod.reason}</span> : null}

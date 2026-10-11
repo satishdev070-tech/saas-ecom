@@ -19,7 +19,7 @@ import { verifyRazorpayPaymentSignature } from "./signature";
 type PayOrder = { id: string; number: string; grandTotal: number; email: string | null; phone: string; name: string | null };
 
 export type GatewayOption = { id: "razorpay" | "cashfree" | "payu"; label: string; description: string };
-const GATEWAY_LABELS: Record<GatewayOption["id"], Omit<GatewayOption, "id">> = {
+export const GATEWAY_LABELS: Record<GatewayOption["id"], Omit<GatewayOption, "id">> = {
   razorpay: { label: "Razorpay", description: "UPI, cards, net banking and wallets" },
   cashfree: { label: "Cashfree", description: "UPI, cards, net banking, wallets and pay later" },
   payu: { label: "PayU", description: "UPI, cards, net banking and EMI" },

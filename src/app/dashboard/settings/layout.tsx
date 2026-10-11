@@ -8,6 +8,7 @@ const GROUPS: { label: string; items: { href: string; label: string; permission:
     items: [
       { href: "/dashboard/settings", label: "General & branding", permission: "store.read" },
       { href: "/dashboard/themes", label: "Theme", permission: "theme.edit" },
+      { href: "/dashboard/settings/festive", label: "Festive vibes", permission: "store.read" },
       { href: "/dashboard/settings/domains", label: "Domains", permission: "store.read" },
     ],
   },

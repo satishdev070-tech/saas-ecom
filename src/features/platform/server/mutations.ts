@@ -58,19 +58,24 @@ export async function changeTenantPlan(ctx: PlatformContext, input: z.infer<type
   assertPlatformPermission(ctx, "platform.tenants.manage");
   const supabase = await createSupabaseServerClient();
   const [{ data: tenant, error: tErr }, { data: plan, error: pErr }] = await Promise.all([
-    supabase.from("tenants").select("id, plan_id").eq("id", input.tenantId).maybeSingle(),
+    supabase.from("tenants").select("id, plan_id, status").eq("id", input.tenantId).maybeSingle(),
     supabase.from("plans").select("id, code, name").eq("id", input.planId).maybeSingle(),
   ]);
   if (tErr) throw mapDbError(tErr);
   if (pErr) throw mapDbError(pErr);
   if (!tenant) throw new AppError("NOT_FOUND");
   if (!plan) throw formError("Choose a plan", "planId");
-  if (tenant.plan_id === plan.id) return;
-
-  const { data, error } = await supabase.from("tenants").update({ plan_id: plan.id }).eq("id", tenant.id).select("id").maybeSingle();
-  if (error) throw mapDbError(error, { tenantId: tenant.id });
-  if (!data) throw new AppError("FORBIDDEN");
-  await platformAudit(ctx, { tenantId: tenant.id, action: "tenant.plan_changed", entityType: "tenant", entityId: tenant.id, metadata: { from: tenant.plan_id, to: plan.id, plan_code: plan.code } });
+  if (tenant.plan_id !== plan.id) {
+    const { data, error } = await supabase.from("tenants").update({ plan_id: plan.id }).eq("id", tenant.id).select("id").maybeSingle();
+    if (error) throw mapDbError(error, { tenantId: tenant.id });
+    if (!data) throw new AppError("FORBIDDEN");
+    await platformAudit(ctx, { tenantId: tenant.id, action: "tenant.plan_changed", entityType: "tenant", entityId: tenant.id, metadata: { from: tenant.plan_id, to: plan.id, plan_code: plan.code } });
+  }
+  // set_tenant_status re-checks the permission and writes its own audit entry.
+  if (input.activate && tenant.status === "trial") {
+    const { error } = await supabase.rpc("set_tenant_status", { p_tenant: tenant.id, p_status: "active", p_reason: `Plan activated: ${plan.name}` });
+    if (error) throw mapDbError(error, { tenantId: tenant.id });
+  }
 }
 
 export async function extendTrial(ctx: PlatformContext, input: z.infer<typeof extendTrialSchema>): Promise<{ trialEndsAt: string }> {
