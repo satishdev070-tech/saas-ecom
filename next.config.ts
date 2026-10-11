@@ -23,10 +23,17 @@ const nextConfig: NextConfig = {
     remotePatterns: supabaseHost
       ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
       : [],
-    formats: ["image/avif", "image/webp"],
-    // Next's default minus 3840: storefronts top out around 100vw x 2 DPR (~2048), and every width
-    // adds a ~250-char candidate to each <img srcset> in the HTML (the bulk of a storefront page).
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    // Every (image × width × format) the optimizer produces counts against Vercel's Image
+    // Optimization "transformations" quota (the Hobby plan was paused for exceeding it), so:
+    // WebP only (AVIF doubled the count for a small size gain) and a short width ladder
+    // (each width is another transformation per image; the browser picks the next size up).
+    formats: ["image/webp"],
+    deviceSizes: [640, 1080, 1920],
+    // Small slots (thumbnails, cards in narrow grids) and the 384px logo (storeImageSrc).
+    imageSizes: [96, 384],
+    // Optimized images are immutable per URL (uploads get new paths), so keep them for 31 days
+    // instead of re-optimizing whenever a short upstream cache expires.
+    minimumCacheTTL: 2678400,
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

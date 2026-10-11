@@ -6,7 +6,8 @@ import { BENEFITS, CATEGORY_CARDS, CTA_CREATE, CTA_THEMES, HERO, HOW_IT_WORKS, S
 import { themeCountFor, themeForIndustry, themesHref } from "../themes";
 import { ButtonLink, Container, Section, SectionHeading } from "./ui";
 import { ThemeCard, ThemeDevicePreview } from "./theme-card";
-import { DESKTOP_VIEWPORT, LiveFrame } from "./live-frame";
+import { DESKTOP_VIEWPORT } from "./live-frame";
+import { themeShot } from "../theme-shots";
 
 const BENEFIT_ICONS: Record<BenefitKey, typeof Check> = {
   storefront: LayoutTemplate,
@@ -59,14 +60,14 @@ export function Hero({ theme, previewUrl, trialDays }: { theme: MarketplaceTheme
           <figure className="relative pb-8 lg:pl-6">
             <div className="absolute -inset-x-4 -top-6 bottom-2 -z-0 rounded-[40px] bg-brand-accent-soft" aria-hidden />
             <div className="relative">
-              <ThemeDevicePreview theme={theme} previewUrl={previewUrl} size="large" eager />
+              <ThemeDevicePreview theme={theme} previewUrl={previewUrl} size="large" eager live />
             </div>
             <figcaption className="relative mt-10 text-center text-sm text-muted">
               Shown: the{" "}
               <Link href={`/themes/${theme.key}`} className="font-semibold text-brand underline-offset-2 hover:underline">
                 {theme.name}
               </Link>{" "}
-              theme{previewUrl ? " on a live demo store" : ""}, with sample products.
+              theme with sample products{previewUrl ? " (select Live preview to try the demo store)" : ""}.
             </figcaption>
           </figure>
         ) : null}
@@ -103,7 +104,7 @@ export function Benefits() {
   );
 }
 
-export function Categories({ previews }: { previews: Map<string, string> }) {
+export function Categories() {
   return (
     <Section id={SECTION_IDS.categories} tone="canvas" labelledBy="categories-title">
       <SectionHeading id="categories-title" eyebrow="For every kind of business" title="Built for more than fashion" body="Themes are designed for different kinds of products, from jewellery to bakeries to electronics." />
@@ -115,7 +116,7 @@ export function Categories({ previews }: { previews: Map<string, string> }) {
             <li key={c.industry}>
               <Link href={themesHref({ industry: c.industry as never })} className="group block h-full overflow-hidden rounded-brand-lg border border-border bg-white transition-shadow hover:shadow-brand-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                 <div className="overflow-hidden border-b border-border" aria-hidden>
-                  {theme ? <CategoryPreview theme={theme} label={c.label} previewUrl={previews.get(theme.key) ?? null} /> : null}
+                  {theme ? <CategoryPreview theme={theme} label={c.label} /> : null}
                 </div>
                 <div className="p-4">
                   <p className="font-brand font-bold text-brand-ink group-hover:text-brand">{c.label}</p>
@@ -131,16 +132,17 @@ export function Categories({ previews }: { previews: Map<string, string> }) {
   );
 }
 
-function CategoryPreview({ theme, label, previewUrl }: { theme: MarketplaceTheme; label: string; previewUrl: string | null }) {
-  const fallback = (
-    <div className="h-full" style={{ background: theme.preset.tokens.colors.background }}>
-      <ThemeMockup preset={theme.preset} name={label} />
-    </div>
-  );
-  if (previewUrl) return <LiveFrame src={previewUrl} viewport={DESKTOP_VIEWPORT} fallback={fallback} />;
+/** Category card image: the theme's screenshot when captured, otherwise its mockup. Never a live store. */
+function CategoryPreview({ theme, label }: { theme: MarketplaceTheme; label: string }) {
+  const shot = themeShot(theme.key, "desktop");
   return (
-    <div className="overflow-hidden" style={{ aspectRatio: `${DESKTOP_VIEWPORT.width} / ${DESKTOP_VIEWPORT.height}` }}>
-      {fallback}
+    <div className="overflow-hidden" style={{ aspectRatio: `${DESKTOP_VIEWPORT.width} / ${DESKTOP_VIEWPORT.height}`, background: theme.preset.tokens.colors.background }}>
+      {shot ? (
+        // eslint-disable-next-line @next/next/no-img-element -- static pre-sized WebP, no optimizer needed
+        <img src={shot} alt="" width={DESKTOP_VIEWPORT.width} height={DESKTOP_VIEWPORT.height} loading="lazy" decoding="async" className="block size-full object-cover object-top" />
+      ) : (
+        <ThemeMockup preset={theme.preset} name={label} />
+      )}
     </div>
   );
 }

@@ -81,7 +81,7 @@ export function StoreArtImage({
  * features/storefront/server/logo.ts does for the header logo).
  * `width` must be one of next.config images.deviceSizes/imageSizes. Null for invalid paths.
  */
-export function storeImageSrc(path: string | null | undefined, width: 384 | 640 | 828 = 640): string | null {
+export function storeImageSrc(path: string | null | undefined, width: 384 | 640 = 640): string | null {
   const src = assetUrl(path);
   // The optimizer refuses SVG (vector anyway) and passes GIF through: use those as they are.
   if (!src || /\.(svg|gif)$/i.test(src)) return src;
