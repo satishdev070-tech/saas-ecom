@@ -1,12 +1,22 @@
-name = "paliya-domain-router"
+name = "buildbrighten-domain-router"
 main = "src/index.ts"
 compatibility_date = "2026-09-01"
 workers_dev = false
 
-# Attach to the Cloudflare for SaaS fallback origin / custom hostnames:
-# routes = [{ pattern = "*/*", zone_name = "paliya.store" }]
+# Store subdomains and connected custom domains go through this Worker; the platform itself
+# (buildbrighten.in, www.buildbrighten.in) is DNS-only and reaches the host directly. The Worker
+# only runs on PROXIED (orange cloud) records, so `*.buildbrighten.in` does not catch www.
+# Each zone must already be on Cloudflare before `wrangler deploy` (see docs/DEPLOY_HOSTINGER.md).
+routes = [
+  { pattern = "*.buildbrighten.in/*", zone_name = "buildbrighten.in" },
+  { pattern = "thepaliya.com/*", zone_name = "thepaliya.com" },
+  { pattern = "www.thepaliya.com/*", zone_name = "thepaliya.com" },
+]
 
 [vars]
-ORIGIN_URL = "https://origin.paliya.store"
+# The host that serves the app (Hostinger knows this name). Platform links use www, so origin
+# redirects to this exact host are safe to rewrite back to the store's host.
+ORIGIN_URL = "https://buildbrighten.in"
 
-# Secret (not in this file): wrangler secret put EDGE_SHARED_SECRET
+# Secret (not in this file): npx wrangler secret put EDGE_SHARED_SECRET
+# Same 32+ character value as EDGE_SHARED_SECRET in the app's environment.

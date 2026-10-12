@@ -39,6 +39,12 @@ Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprock
 - `pnpm run build` runs `scripts/build.mjs`, which uses webpack where Turbopack's native compiler can't load (glibc < 2.29, as on Hostinger). Tested in `tests/unit/build-script.test.ts`.
 - `/api/health/ready` lists missing or invalid environment variables (names and reasons only) and whether Supabase is reachable. It returns 503 until both are fine, and does no DB access. Troubleshooting is in `docs/DEPLOY_HOSTINGER.md`.
 
+## Store subdomains and custom domains on Hostinger (2026-10-12)
+
+- `workers/domain-router/wrangler.toml` is configured for buildbrighten.in: it routes `*.buildbrighten.in`, `thepaliya.com` and `www.thepaliya.com` to the Worker, with origin `https://buildbrighten.in`.
+- Setup steps are in `docs/DEPLOY_HOSTINGER.md` (Cloudflare free plan, `EDGE_SHARED_SECRET`).
+- Verified on a production build: a signed host resolves to that store; a forged signature falls back to the platform.
+
 ## Payments, super-admin store control, Resend auth email, more industries (2026-10-11)
 
 - **Online payments at checkout (fix).** `loadPaymentOptions` no longer gates every gateway on the Razorpay flag
