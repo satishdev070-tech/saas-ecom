@@ -47,3 +47,22 @@ compiler (`GLIBC_2.29 not found`) and falls back to the WebAssembly one. Two con
   report it and we'll switch the copies to be made elsewhere.
 - **Memory**: the build needs roughly 2 GB RAM. If the build is killed without an error,
   the plan's limit is too low; build in GitHub Actions instead and upload `.next`.
+
+## "Something went wrong · Reference: …" on every page
+
+The build worked but the server fails while rendering. Open
+**`https://<your domain>/api/health/ready`**. It lists any missing or invalid environment
+variables (names and reasons only, never values) and whether Supabase answers:
+
+```json
+{"ok":false,"env":{"ok":false,"issues":["SUPABASE_SECRET_KEY: Invalid input: expected string, received undefined"]},"supabase":{"ok":true,"detail":"reachable"}}
+```
+
+- **`env` issues**: add the named variables in hPanel → Node.js app → Environment variables
+  (or `.env`), then **redeploy**. A redeploy is needed, not just a restart, because `NEXT_PUBLIC_*`
+  values are baked in at build time. `APP_SECRET` needs 32+ characters; the Supabase keys
+  come from Supabase → Project settings → API keys.
+- **`supabase` unreachable**: wrong `NEXT_PUBLIC_SUPABASE_URL`, a paused Supabase project, or
+  the server blocks outbound HTTPS.
+- **`ok: true` but pages still fail**: hPanel → Node.js app → Logs. Search for the reference
+  number shown on the error page; the line next to it is the real error.
