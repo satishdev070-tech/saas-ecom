@@ -30,7 +30,7 @@ function Change({ value }: { value: number | null }) {
   );
 }
 
-function KpiStrip({ kpis, customers, products }: { kpis: HomeKpis | null; customers: number | null; products: number }) {
+function KpiStrip({ kpis, customers, products, allProducts }: { kpis: HomeKpis | null; customers: number | null; products: number; allProducts: number }) {
   const items: { label: string; value: string; note?: React.ReactNode }[] = [];
   if (kpis) {
     items.push({ label: "Revenue", value: formatMoney(kpis.revenueMinor), note: <Change value={kpis.revenueChange} /> });
@@ -38,7 +38,16 @@ function KpiStrip({ kpis, customers, products }: { kpis: HomeKpis | null; custom
     items.push({ label: "Average order", value: kpis.orders ? formatMoney(kpis.aovMinor) : "—" });
   }
   if (customers !== null) items.push({ label: "Customers", value: String(customers), note: <span className="text-muted">All time</span> });
-  items.push({ label: "Active products", value: String(products) });
+  // Total catalogue first: "Active" alone hid drafts and looked like products were missing.
+  items.push({
+    label: "Products",
+    value: String(allProducts),
+    note: (
+      <Link href="/dashboard/products" className="text-muted hover:text-foreground hover:underline">
+        {products} live{allProducts > products ? ` · ${allProducts - products} draft` : ""} · View all
+      </Link>
+    ),
+  });
   return (
     <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-surface sm:grid-cols-3 lg:grid-cols-5">
       {items.map((i) => (
@@ -111,7 +120,7 @@ export default async function DashboardHome() {
 
       <SetupChecklist steps={home.setup} />
 
-      <KpiStrip kpis={home.sales?.kpis ?? null} customers={home.counts.customers} products={home.counts.activeProducts} />
+      <KpiStrip kpis={home.sales?.kpis ?? null} customers={home.counts.customers} products={home.counts.activeProducts} allProducts={home.counts.allProducts} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

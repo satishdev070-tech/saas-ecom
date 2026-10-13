@@ -36,6 +36,7 @@ const GROUPS: { label: string; items: { href: string; label: string; permission:
       { href: "/dashboard/settings/team", label: "Team", permission: "members.read" },
       { href: "/dashboard/settings/roles", label: "Roles & permissions", permission: "roles.manage" },
       { href: "/dashboard/settings/security", label: "Security & activity", permission: "members.manage" },
+      { href: "/dashboard/settings/plan", label: "Plan & billing", permission: "store.read" },
     ],
   },
 ];
