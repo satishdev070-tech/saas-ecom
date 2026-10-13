@@ -45,6 +45,21 @@ Still not verified here: live Razorpay keys and webhooks, Resend email, Shiprock
 - Setup steps are in `docs/DEPLOY_HOSTINGER.md` (Cloudflare free plan, `EDGE_SHARED_SECRET`).
 - Verified on a production build: a signed host resolves to that store; a forged signature falls back to the platform.
 
+## Plan requests and activation; product count (2026-10-13)
+
+- **Seller → Settings → Plan & billing** (`/dashboard/settings/plan`): current plan, status, trial end, usage vs
+  limits, plan cards (monthly/yearly with yearly saving), and **Upgrade / Activate / Downgrade** requests (owner only,
+  `billing.manage`); pending request with cancel, request history. Trial and suspended banners link here.
+- **Super admin → Plan requests** (`/admin/plan-requests`, also a callout on the admin overview): pending first,
+  approve (switches the plan and makes the store active in one transaction, optional months paid + note) or decline.
+- **Super admin → Store**: "Plan & subscription" card (plan, status, trial, pending request with approve/decline,
+  history) and **Activate plan** (plan + active in one step, reason required) for trial/suspended stores.
+- Migration 2900 (`supabase/dev/apply-2900.sql`): `plan_requests` (RLS read for members/platform, no direct writes),
+  `request_plan`, `cancel_plan_request`, `platform_decide_plan_request` (SECURITY DEFINER, audited). Pages degrade
+  with a notice until it is applied. Tests: `tests/rls/plan-requests.test.ts`, `tests/unit/billing/plans.test.ts`.
+- Dashboard home: the "Active products" tile is now **Products** (whole catalogue, excluding archived) with
+  "N live · M draft · View all", because counting only active products looked like products were missing.
+
 ## Payments, super-admin store control, Resend auth email, more industries (2026-10-11)
 
 - **Online payments at checkout (fix).** `loadPaymentOptions` no longer gates every gateway on the Razorpay flag

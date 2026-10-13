@@ -8,6 +8,7 @@ import { buttonClass } from "@/components/ui/button";
 import { BarList, ColumnChart } from "@/features/platform/components/charts";
 import { formatMoney, toMinor } from "@/lib/money";
 import { formatBytes } from "@/features/media/rules";
+import { pendingPlanRequestCount } from "@/features/billing/server";
 
 export const metadata: Metadata = { title: "Overview" };
 
@@ -30,12 +31,13 @@ function Kpi({ icon: Icon, label, value, hint }: { icon: typeof Store; label: st
 
 export default async function AdminHome() {
   const ctx = await requirePlatform("platform.tenants.read");
-  const [o, d, weeks, top, activity] = await Promise.all([
+  const [o, d, weeks, top, activity, pendingPlans] = await Promise.all([
     getPlatformOverview(),
     getPlatformDashboard(),
     getSignupSeries(12),
     topTenantsThisMonth("gmv", 6),
     ctx.permissions.has("platform.audit.read") ? listAuditLogs({ page: 1, pageSize: 8 }) : Promise.resolve(null),
+    pendingPlanRequestCount(ctx),
   ]);
   const gmv6 = d.monthly.reduce((s, m) => s + m.gmv, 0);
   const statusItems = (["active", "trial", "suspended", "cancelled"] as const).map((s) => ({ key: s, label: s.charAt(0).toUpperCase() + s.slice(1), value: o.statusCounts[s] }));
@@ -53,6 +55,15 @@ export default async function AdminHome() {
           ) : null
         }
       />
+
+      {pendingPlans ? (
+        <Link href="/admin/plan-requests" className="flex items-center justify-between rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-small hover:bg-warning/15">
+          <span>
+            <span className="font-semibold">{pendingPlans}</span> plan request{pendingPlans === 1 ? "" : "s"} waiting for approval
+          </span>
+          <span className="font-medium text-accent">Review →</span>
+        </Link>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi icon={Store} label="Total stores" value={o.totalTenants} hint={`${o.new30d} new in 30 days`} />

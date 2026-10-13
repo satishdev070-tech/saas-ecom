@@ -23,6 +23,9 @@ import { formatBytes } from "@/features/platform/health";
 import { maskEmail } from "@/features/platform/privacy";
 import { ChangePlanForm, ExtendTrialForm, FlagOverrideForm, RecheckDomainButton, StartSupportForm, TenantStatusForm } from "@/features/platform/components/admin-forms";
 import { LoginAsStoreButton, MemberAccessActions } from "@/features/platform/components/store-admin-forms";
+import { listPlanRequests } from "@/features/billing/server";
+import { ActivatePlanForm, DecidePlanRequest } from "@/features/billing/components";
+import { daysUntil } from "@/features/billing/schemas";
 import { DomainStatusBadge, SslStatusBadge } from "@/features/domains/components/domain-display";
 import { Badge, Card, PageHeader, StatCard, Table, td, th } from "@/components/ui/layout";
 import { formatDate, formatDateTime } from "@/features/analytics/dates";
@@ -75,7 +78,9 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
     getEntitlements(id),
     canSupport ? getMyActiveSupportSession(ctx.user.id, id) : Promise.resolve(null),
   ]);
-  const config = await getStoreConfiguration(id);
+  const [config, planRequests] = await Promise.all([getStoreConfiguration(id), listPlanRequests(ctx, { tenantId: id, limit: 5 })]);
+  const pendingRequest = planRequests.rows.find((r) => r.status === "pending") ?? null;
+  const trialDaysLeft = daysUntil(t.trialEndsAt);
   const limits = t.plan?.limits ?? null;
   const bytes = storage[0]?.bytes ?? 0;
   const url = storeOrigin(storeSubdomain(t.slug));
@@ -101,6 +106,7 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
           <>
             {manage && superAdmin && owner?.email && t.status !== "cancelled" ? <LoginAsStoreButton tenantId={id} ownerEmail={owner.email} /> : null}
             {manage ? <TenantStatusForm tenantId={id} status={t.status} /> : null}
+            {manage && (t.status === "trial" || t.status === "suspended") ? <ActivatePlanForm tenantId={id} planId={pendingRequest?.planId ?? t.planId} plans={plans.filter((p) => p.active).map((p) => ({ value: p.id, label: p.name }))} /> : null}
             {manage ? <ChangePlanForm tenantId={id} planId={t.planId} onTrial={t.status === "trial"} plans={plans.map((p) => ({ value: p.id, label: p.name }))} /> : null}
             {manage && t.status === "trial" ? <ExtendTrialForm tenantId={id} /> : null}
             {canSupport ? (
@@ -166,6 +172,52 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
           </Table>
         </Card>
       </div>
+
+      <Card title="Plan & subscription" actions={<Link href="/admin/plan-requests" className="text-sm text-accent">All plan requests →</Link>}>
+        <dl className="grid gap-3 text-sm sm:grid-cols-4">
+          <div>
+            <dt className="text-muted">Plan</dt>
+            <dd className="font-medium">{t.plan?.name ?? "No plan"}</dd>
+          </div>
+          <div>
+            <dt className="text-muted">Status</dt>
+            <dd>
+              <Badge tone={TONE[t.status]}>{t.status}</Badge>
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted">Trial</dt>
+            <dd className={trialDaysLeft !== null && trialDaysLeft < 0 && t.status === "trial" ? "text-error" : ""}>
+              {t.status === "trial" && t.trialEndsAt ? (trialDaysLeft !== null && trialDaysLeft < 0 ? `Ended ${formatDate(t.trialEndsAt)}` : `Ends ${formatDate(t.trialEndsAt)} (${trialDaysLeft}d)`) : "—"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted">Requested</dt>
+            <dd>{pendingRequest ? `${pendingRequest.planName} · ${pendingRequest.cycle}` : "No pending request"}</dd>
+          </div>
+        </dl>
+        {pendingRequest ? (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
+            <p>
+              Owner asked for <span className="font-medium">{pendingRequest.planName}</span> ({pendingRequest.cycle}) on {formatDate(pendingRequest.createdAt)}
+              {pendingRequest.note ? <span className="block text-xs text-muted">“{pendingRequest.note}”</span> : null}
+            </p>
+            {manage ? <DecidePlanRequest requestId={pendingRequest.id} planName={pendingRequest.planName} storeName={t.name} /> : null}
+          </div>
+        ) : null}
+        {planRequests.rows.filter((r) => r.status !== "pending").length ? (
+          <ul className="mt-3 space-y-1 text-xs text-muted">
+            {planRequests.rows
+              .filter((r) => r.status !== "pending")
+              .map((r) => (
+                <li key={r.id}>
+                  {formatDate(r.createdAt)} · {r.planName} ({r.cycle}) · {r.status}
+                  {r.decisionNote ? ` · ${r.decisionNote}` : ""}
+                </li>
+              ))}
+          </ul>
+        ) : null}
+      </Card>
 
       <Card title="Store profile">
         {t.store ? (

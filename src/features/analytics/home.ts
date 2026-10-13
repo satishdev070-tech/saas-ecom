@@ -13,7 +13,7 @@ export type SetupStep = { key: string; label: string; done: boolean; href: strin
 
 export type DashboardHome = {
   sales: { kpis: HomeKpis; days: { day: string; orders: number; revenueMinor: number }[]; topProducts: { productId: string | null; title: string; units: number; revenueMinor: number }[] } | null;
-  counts: { activeProducts: number; customers: number | null; toFulfil: number | null };
+  counts: { activeProducts: number; allProducts: number; customers: number | null; toFulfil: number | null };
   recentOrders: HomeOrder[] | null;
   lowStock: { items: HomeLowStock[]; total: number } | null;
   setup: SetupStep[];
@@ -40,7 +40,7 @@ export async function getDashboardHome(ctx: TenantContext, now = new Date()): Pr
   const inventory = can(ctx, "inventory.read");
   const customers = can(ctx, "customers.read");
 
-  const [daily, prevDaily, top, recent, toFulfil, stock, activeProducts, customerCount, media, theme, shipping, cod, payments] = await Promise.all([
+  const [daily, prevDaily, top, recent, toFulfil, stock, activeProducts, customerCount, media, theme, shipping, cod, payments, allProducts] = await Promise.all([
     analytics ? supabase.rpc("dashboard_sales_daily", range) : null,
     analytics ? supabase.rpc("dashboard_sales_daily", prevRange) : null,
     analytics ? supabase.rpc("dashboard_top_products", { ...range, p_limit: 5 }) : null,
@@ -62,6 +62,7 @@ export async function getDashboardHome(ctx: TenantContext, now = new Date()): Pr
     supabase.from("shipping_rates").select("id", { count: "exact", head: true }).eq("tenant_id", t),
     supabase.from("stores").select("cod_settings").eq("tenant_id", t).maybeSingle(),
     can(ctx, "payments.manage") ? supabase.from("tenant_payment_settings").select("enabled").eq("tenant_id", t).maybeSingle() : null,
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("tenant_id", t).neq("status", "archived"),
   ]);
   for (const r of [daily, prevDaily, top, recent, toFulfil, stock, activeProducts, customerCount, media, theme, shipping]) if (r?.error) throw mapDbError(r.error);
 
@@ -112,7 +113,7 @@ export async function getDashboardHome(ctx: TenantContext, now = new Date()): Pr
 
   return {
     sales,
-    counts: { activeProducts: activeProducts.count ?? 0, customers: customerCount ? (customerCount.count ?? 0) : null, toFulfil: toFulfil ? (toFulfil.count ?? 0) : null },
+    counts: { activeProducts: activeProducts.count ?? 0, allProducts: allProducts.error ? (activeProducts.count ?? 0) : (allProducts.count ?? 0), customers: customerCount ? (customerCount.count ?? 0) : null, toFulfil: toFulfil ? (toFulfil.count ?? 0) : null },
     recentOrders,
     lowStock,
     setup,

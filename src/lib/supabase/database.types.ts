@@ -2250,6 +2250,76 @@ export type Database = {
           },
         ];
       };
+      plan_requests: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          plan_id: string;
+          from_plan_id: string | null;
+          billing_cycle: string;
+          note: string | null;
+          status: string;
+          requested_by: string | null;
+          decided_by: string | null;
+          decided_at: string | null;
+          decision_note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          plan_id: string;
+          from_plan_id?: string | null;
+          billing_cycle?: string;
+          note?: string | null;
+          status?: string;
+          requested_by?: string | null;
+          decided_by?: string | null;
+          decided_at?: string | null;
+          decision_note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          plan_id?: string;
+          from_plan_id?: string | null;
+          billing_cycle?: string;
+          note?: string | null;
+          status?: string;
+          requested_by?: string | null;
+          decided_by?: string | null;
+          decided_at?: string | null;
+          decision_note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "plan_requests_from_plan_id_fkey";
+            columns: ["from_plan_id"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "plan_requests_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "plan_requests_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       plans: {
         Row: {
           id: string;
@@ -4416,6 +4486,12 @@ export type Database = {
         };
         Returns: undefined;
       };
+      cancel_plan_request: {
+        Args: {
+          p_request: string;
+        };
+        Returns: undefined;
+      };
       close_own_store: {
         Args: {
           p_tenant: string;
@@ -4574,6 +4650,15 @@ export type Database = {
         Args: never;
         Returns: Json;
       };
+      platform_decide_plan_request: {
+        Args: {
+          p_request: string;
+          p_approve: boolean;
+          p_note: string;
+          p_months?: number;
+        };
+        Returns: undefined;
+      };
       platform_find_user_by_email: {
         Args: {
           p_email: string;
@@ -4677,6 +4762,15 @@ export type Database = {
           p_items: Json;
         };
         Returns: number;
+      };
+      request_plan: {
+        Args: {
+          p_tenant: string;
+          p_plan: string;
+          p_cycle: string;
+          p_note: string;
+        };
+        Returns: string;
       };
       rollback_theme: {
         Args: {

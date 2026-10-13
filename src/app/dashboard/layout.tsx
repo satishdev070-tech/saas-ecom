@@ -30,7 +30,7 @@ function trialMessage(t: { plan: string | null; endsAt: string | null } | null):
   const end = new Date(t.endsAt);
   const days = Math.ceil((end.getTime() - Date.now()) / 86_400_000);
   const date = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" }).format(end);
-  if (days < 0) return `Your free trial${of} ended on ${date}. Contact support to activate your plan.`;
+  if (days < 0) return `Your free trial${of} ended on ${date}. Choose a plan to activate your store.`;
   return `You're on a free trial${of} · ${days === 0 ? "ends today" : `${days} day${days === 1 ? "" : "s"} left`} (ends ${date}).`;
 }
 import { SUPPORT_LOGIN_COOKIE, readSupportLogin } from "@/features/platform/server/store-admin";
@@ -167,13 +167,17 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
   const statusBanner =
     ctx.tenantStatus === "suspended" ? (
       <div role="alert" className="border-b border-error/30 bg-error/10 px-5 py-2 text-small text-error">
-        This store is suspended and hidden from shoppers. Contact support to restore it.
+        This store is suspended and hidden from shoppers.{" "}
+        <Link href="/dashboard/settings/plan" className="font-medium underline underline-offset-2">
+          Activate a plan
+        </Link>{" "}
+        or contact support to restore it.
       </div>
     ) : ctx.tenantStatus === "trial" ? (
       <div className="border-b border-border bg-accent-soft px-5 py-2 text-small text-foreground">
         {trialMessage(trial)}{" "}
-        <Link href="/dashboard/settings" className="font-medium underline underline-offset-2">
-          Review store settings
+        <Link href="/dashboard/settings/plan" className="font-medium underline underline-offset-2">
+          Choose a plan
         </Link>
       </div>
     ) : null;
