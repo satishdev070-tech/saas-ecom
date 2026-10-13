@@ -124,4 +124,9 @@ two routes to `wrangler.toml` and deploy again. (Automating this needs Cloudflar
 - On a store, add to cart and log in once. If either shows "Invalid Server Actions request",
   Hostinger is overwriting `X-Forwarded-Host`; report it so the app can allow the store hosts.
 
+- `HTTP ERROR 429` on store pages: Hostinger is throttling the burst of requests that arrives
+  from Cloudflare's addresses. The Worker keeps `/_next/static/*` (hashed build files) in
+  Cloudflare's cache so only page requests reach Hostinger; redeploy the Worker
+  (`npx wrangler deploy`) after pulling the latest code.
+
 Free Workers plan: 100,000 requests a day, which is plenty for now.

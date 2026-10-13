@@ -62,6 +62,18 @@ export async function buildOriginRequest(request: Request, env: Env, now: number
   });
 }
 
+/**
+ * Build files under /_next/static/ are content-hashed and never change, so they are kept in
+ * Cloudflare's cache. A page load needs dozens of them; without the cache every one would reach
+ * the origin from the same Cloudflare address, and shared hosts (Hostinger) throttle that (429).
+ */
+export function isImmutableAsset(request: Request): boolean {
+  return request.method === "GET" && new URL(request.url).pathname.startsWith("/_next/static/");
+}
+
+type Ctx = { waitUntil(promise: Promise<unknown>): void };
+const edgeCache = () => (globalThis as unknown as { caches?: { default?: Cache } }).caches?.default;
+
 /** Removes internal routing headers that would reveal the app's rewrite target. */
 async function strip(res: Response): Promise<Response> {
   if (!res.headers.has("x-middleware-rewrite")) return res;
@@ -71,11 +83,22 @@ async function strip(res: Response): Promise<Response> {
 }
 
 const worker = {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: Ctx): Promise<Response> {
     const upstream = await buildOriginRequest(request, env);
     if (upstream instanceof Response) return upstream;
+    // Same file for every store host, so the cache key is the origin URL (no headers).
+    const cache = isImmutableAsset(request) ? edgeCache() : undefined;
+    const cacheKey = new Request(upstream.url);
+    if (cache) {
+      const hit = await cache.match(cacheKey);
+      if (hit) return hit;
+    }
     try {
       const res = await strip(await fetch(upstream));
+      if (cache && res.status === 200) {
+        const put = cache.put(cacheKey, res.clone()).catch(() => undefined);
+        if (ctx) ctx.waitUntil(put);
+      }
       // Redirects from the origin that point at the origin host are rewritten back to the customer host.
       const location = res.headers.get("location");
       if (location) {

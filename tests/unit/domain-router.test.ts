@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOriginRequest, normalizeHost } from "../../workers/domain-router/src/index";
+import { buildOriginRequest, isImmutableAsset, normalizeHost } from "../../workers/domain-router/src/index";
 import { verifyEdgeHost } from "@/lib/tenant/edge-signature";
 
 const env = { ORIGIN_URL: "https://origin.paliya.store", EDGE_SHARED_SECRET: "s".repeat(40) };
@@ -21,5 +21,11 @@ describe("domain-router worker", () => {
     expect(normalizeHost("a.b.c:443")).toBe("a.b.c");
     const res = await buildOriginRequest(new Request("https://shop.brand.in/"), { ...env, EDGE_SHARED_SECRET: "short" });
     expect((res as Response).status).toBe(503);
+  });
+  it("caches only GETs of hashed build files", () => {
+    expect(isImmutableAsset(new Request("https://shop.brand.in/_next/static/chunks/app-1a2b.js"))).toBe(true);
+    expect(isImmutableAsset(new Request("https://shop.brand.in/_next/static/x.css", { method: "POST" }))).toBe(false);
+    expect(isImmutableAsset(new Request("https://shop.brand.in/products/x"))).toBe(false);
+    expect(isImmutableAsset(new Request("https://shop.brand.in/_next/data/x.json"))).toBe(false);
   });
 });
