@@ -3,14 +3,16 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 workers_dev = false
 
-# Store subdomains and connected custom domains go through this Worker; the platform itself
-# (buildbrighten.in, www.buildbrighten.in) is DNS-only and reaches the host directly. The Worker
-# only runs on PROXIED (orange cloud) records, so `*.buildbrighten.in` does not catch www.
-# Each zone must already be on Cloudflare before `wrangler deploy` (see docs/DEPLOY_HOSTINGER.md).
+# Every proxied (orange cloud) host in the buildbrighten.in zone runs this Worker:
+#  - store subdomains  (*.buildbrighten.in)
+#  - seller custom domains added as Cloudflare for SaaS custom hostnames (thepaliya.com, …),
+#    whose DNS CNAMEs to stores.buildbrighten.in (the fallback origin).
+# The platform itself (buildbrighten.in, www) is DNS-only, so the Worker never runs for it.
+# Custom domains must NOT have their own Worker route in another zone: a cross-zone fetch reaches
+# the origin from one shared Cloudflare address, and Hostinger rate-limits it (HTTP 429).
+# See docs/DEPLOY_HOSTINGER.md.
 routes = [
-  { pattern = "*.buildbrighten.in/*", zone_name = "buildbrighten.in" },
-  { pattern = "thepaliya.com/*", zone_name = "thepaliya.com" },
-  { pattern = "www.thepaliya.com/*", zone_name = "thepaliya.com" },
+  { pattern = "*/*", zone_name = "buildbrighten.in" },
 ]
 
 [vars]

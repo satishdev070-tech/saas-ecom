@@ -95,16 +95,26 @@ value.
 4. At your registrar, replace the nameservers with the two Cloudflare gives you. This usually
    takes minutes, but can take up to 24 h.
 
-### 3. Put thepaliya.com on Cloudflare (free)
-1. Add `thepaliya.com` as a second domain, Free plan. Keep its MX/TXT records.
-2. Delete its old A/CNAME records that point at Vercel (`76.76.21.21`, `cname.vercel-dns.com`),
-   then add:
-   | Type | Name | Content | Proxy |
-   |---|---|---|---|
-   | A | `@` | `192.0.2.1` | **Proxied (orange)** |
-   | A | `www` | `192.0.2.1` | **Proxied (orange)** |
-   `192.0.2.1` is a placeholder. The Worker answers every request, so nothing is ever sent to it.
-3. SSL/TLS → **Full (strict)**, then change the nameservers at the registrar.
+### 3. Seller custom domains (thepaliya.com) via Custom Hostnames
+Custom domains are served **through the buildbrighten.in zone** (Cloudflare for SaaS, first 100
+hostnames free). Do not give them their own Worker route in their own zone: a Worker fetch from
+another zone reaches Hostinger from one shared Cloudflare address, and Hostinger answers 429
+after about a dozen requests. Through the same zone, the visitor's real IP reaches Hostinger.
+
+1. buildbrighten.in zone → DNS → add `A` `stores` → Hostinger IP, **Proxied (orange)**.
+2. buildbrighten.in zone → SSL/TLS → **Custom Hostnames** → enable Cloudflare for SaaS (it may
+   ask for a payment method; the first 100 hostnames are free) → **Fallback Origin** =
+   `stores.buildbrighten.in` → wait for it to show Active.
+3. **Add Custom Hostname** `thepaliya.com` (certificate validation: HTTP, minimum TLS 1.2),
+   then again for `www.thepaliya.com`. Each shows a TXT record for ownership (name
+   `_cf-custom-hostname…`) and possibly one for the certificate.
+4. In the domain's own DNS (here the thepaliya.com zone on Cloudflare):
+   - delete the `A 192.0.2.1` records for `@` and `www`;
+   - add `CNAME @ → stores.buildbrighten.in` and `CNAME www → stores.buildbrighten.in`, both
+     **DNS only (grey)**. Grey matters: orange would keep the traffic in the thepaliya.com zone;
+   - add the TXT records shown in step 3.
+5. Back in Custom Hostnames, wait until both hostnames show **Active** for the hostname and the
+   certificate (a few minutes; use Refresh).
 
 ### 4. Deploy the Worker (from your computer, once)
 ```
@@ -113,10 +123,11 @@ npx wrangler login
 npx wrangler secret put EDGE_SHARED_SECRET     # paste the value from step 1
 npx wrangler deploy
 ```
-`wrangler.toml` already routes `*.buildbrighten.in`, `thepaliya.com` and `www.thepaliya.com` to
-the Worker. To connect another seller's domain later, add that domain as a Cloudflare zone, add its
-two routes to `wrangler.toml` and deploy again. (Automating this needs Cloudflare for SaaS:
-`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `CUSTOM_DOMAIN_CNAME_TARGET`.)
+`wrangler.toml` routes `*/*` in the buildbrighten.in zone, which covers store subdomains and every
+custom hostname. To connect another seller's domain: add it as a Custom Hostname (step 3) and
+have the seller CNAME it to `stores.buildbrighten.in`; no Worker change is needed. (The dashboard
+can automate this later with `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID` and
+`CUSTOM_DOMAIN_CNAME_TARGET=stores.buildbrighten.in`.)
 
 ### 5. Check
 - `https://the-paliya.buildbrighten.in` → the store.
